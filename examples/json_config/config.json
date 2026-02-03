@@ -1,0 +1,7 @@
+{
+  "servers": [
+    "http://example.com",
+    "http://localhost:8080",
+    "http://anotherdomain.com"
+  ]
+}
