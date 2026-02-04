@@ -46,9 +46,6 @@ func producer(ctx context.Context, ch chan<- int, wg *sync.WaitGroup) {
 }
 
 func main() {
-	// Инициализируем генератор случайных чисел.
-	rand.Seed(time.Now().UnixNano())
-
 	// Создаем контекст с таймаутом в 3 секунды.
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	// cancel() следует вызывать, чтобы освободить ресурсы, связанные с контекстом,

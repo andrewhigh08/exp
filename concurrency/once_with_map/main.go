@@ -8,11 +8,9 @@ import (
 	"fmt"
 	"math/rand"
 	"sync"
-	"time"
 )
 
 func main() {
-	rand.Seed(time.Now().UnixNano())
 	const capacity = 1000
 
 	// `storage` будет использоваться как set для проверки уникальности.

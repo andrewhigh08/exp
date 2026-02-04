@@ -7,7 +7,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"math/rand"
 	"sync"
 	"time"
 )
@@ -165,8 +164,6 @@ func (h *mockHost) DoQuery(ctx context.Context, query string) (string, error) {
 }
 
 func main() {
-	rand.Seed(time.Now().UnixNano())
-
 	fmt.Println("--- Сценарий 1: Одна из реплик отвечает успешно ---")
 	replicas1 := []DatabaseHost{
 		&mockHost{name: "Replica 1 (flaky)", flaky: true},
