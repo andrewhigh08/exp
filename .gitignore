@@ -2,9 +2,3 @@
 .idea/
 vendor/
 aaa/
-
-# Compiled binaries
-channels_wg_context
-distributed_query
-once_with_map
-parkovka
