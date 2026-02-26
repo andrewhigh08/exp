@@ -2,92 +2,106 @@ package main
 
 import (
 	"fmt"
+	"net/http"
 	"sync"
 	"time"
 )
 
-// WP описывает интерфейс пула воркеров.
-type WP interface {
-	// Do добавляет задачу в очередь на выполнение.
-	Do(task func())
-	// Stop останавливает пул и ожидает завершения всех текущих задач.
-	Stop()
+// Task представляет задачу с URL для скачивания/проверки
+type Task struct {
+	URL string
 }
 
-// WorkerPool — реализация пула воркеров.
-type WorkerPool struct {
-	wg        sync.WaitGroup // WaitGroup для ожидания завершения всех горутин-воркеров.
-	tasks     chan func()    // Канал для передачи задач воркерам.
-	closeOnce sync.Once      // Гарантирует, что канал будет закрыт только один раз.
+// Result содержит результат проверки URL
+type Result struct {
+	URL        string
+	StatusCode int
+	Error      error
+	Duration   time.Duration
 }
 
-// NewWp создает новый пул воркеров с заданным количеством горутин.
-func NewWp(workers int) *WorkerPool {
-	wp := &WorkerPool{
-		tasks: make(chan func()), // Небуферизированный канал (можно сделать буферизированным).
+// worker — функция, которая читает из канала jobs и делает HTTP-запрос по URL
+func worker(id int, jobs <-chan Task, results chan<- Result, wg *sync.WaitGroup) {
+	defer wg.Done()
+
+	// Настроим HTTP-клиент с таймаутом
+	client := &http.Client{
+		Timeout: 5 * time.Second,
 	}
 
-	// Запускаем заданное количество воркеров.
-	for i := 0; i < workers; i++ {
-		wp.wg.Add(1) // Увеличиваем счетчик WaitGroup для каждого воркера.
-		go wp.worker(i)
+	for j := range jobs {
+		fmt.Printf("Воркер %d: начал обработку %s\n", id, j.URL)
+
+		start := time.Now()
+		resp, err := client.Get(j.URL)
+		duration := time.Since(start)
+
+		result := Result{
+			URL:      j.URL,
+			Duration: duration,
+			Error:    err,
+		}
+
+		if err == nil {
+			result.StatusCode = resp.StatusCode
+			resp.Body.Close() // Обязательно закрываем тело ответа
+		}
+
+		fmt.Printf("Воркер %d: закончил обработку %s\n", id, j.URL)
+		results <- result
 	}
-
-	return wp
-}
-
-// worker — это функция, которая выполняется в каждой горутине-воркере.
-func (wp *WorkerPool) worker(id int) {
-	defer wp.wg.Done() // Уменьшаем счетчик WaitGroup при завершении воркера.
-
-	// Читаем задачи из канала tasks, пока он не будет закрыт.
-	for task := range wp.tasks {
-		fmt.Printf("Воркер %d: начал выполнение задачи\n", id)
-		task() // Выполняем задачу.
-		fmt.Printf("Воркер %d: закончил выполнение задачи\n", id)
-	}
-	fmt.Printf("Воркер %d: остановлен\n", id)
-}
-
-// Do отправляет задачу в пул.
-// Примечание: Если вызвать Do после Stop, произойдет паника (отправка в закрытый канал).
-func (wp *WorkerPool) Do(task func()) {
-	wp.tasks <- task
-}
-
-// Stop корректно останавливает пул воркеров.
-func (wp *WorkerPool) Stop() {
-	// Используем sync.Once, чтобы закрыть канал только один раз,
-	// даже если Stop будет вызван несколько раз.
-	wp.closeOnce.Do(func() {
-		close(wp.tasks) // Закрываем канал, что служит сигналом для воркеров завершить цикл range.
-		wp.wg.Wait()    // Ожидаем, пока все воркеры закончат свои текущие задачи и выйдут.
-	})
 }
 
 func main() {
-	// Создаем пул из 3 воркеров.
-	wp := NewWp(3)
+	// Список URL-ов для проверки
+	urls := []string{
+		"https://golang.org",
+		"https://google.com",
+		"https://github.com",
+		"https://stackoverflow.com",
+		"https://pkg.go.dev",
+		"https://invalid-url.com.example", // Пример нерабочего URL
+	}
 
-	// Отправляем первую задачу.
-	wp.Do(func() {
-		fmt.Println("Задача 1 выполняется")
-		time.Sleep(500 * time.Millisecond)
-	})
+	numJobs := len(urls)
+	const numWorkers = 3
 
-	// Запускаем горутину, которая отправит еще одну задачу.
+	// Создаем буферизованные каналы для задач и результатов
+	jobs := make(chan Task, numJobs)
+	results := make(chan Result, numJobs)
+
+	// WaitGroup для синхронизации завершения всех воркеров
+	var wg sync.WaitGroup
+
+	// Запускаем воркеров
+	for w := 1; w <= numWorkers; w++ {
+		wg.Add(1)
+		go worker(w, jobs, results, &wg)
+	}
+
+	// Отправляем задачи в канал.
+	for _, u := range urls {
+		jobs <- Task{URL: u}
+	}
+	// Закрываем канал задач: больше задач не поступит.
+	close(jobs)
+
+	// Ожидаем завершения всех воркеров в отдельной горутине.
+	// Когда все закончат работу, закрываем канал результатов.
 	go func() {
-		wp.Do(func() {
-			fmt.Println("Задача 2 (из горутины) выполняется")
-			time.Sleep(500 * time.Millisecond)
-		})
+		wg.Wait()
+		close(results)
 	}()
 
-	// Даем немного времени, чтобы задачи успели попасть в канал перед остановкой.
-	// В реальном коде управление жизненным циклом может быть сложнее.
-	time.Sleep(100 * time.Millisecond)
+	fmt.Println("\n--- Вывод результатов ---")
+	// Читаем результаты по мере их поступления
+	for res := range results {
+		if res.Error != nil {
+			fmt.Printf("❌ ОШИБКА  \t %s: %v (заняло %v)\n", res.URL, res.Error, res.Duration)
+		} else {
+			fmt.Printf("✅ %d \t %s (заняло %v)\n", res.StatusCode, res.URL, res.Duration)
+		}
+	}
 
-	fmt.Println("Остановка пула...")
-	wp.Stop()
-	fmt.Println("Пул остановлен, программа завершена.")
+	fmt.Println("Все URL обработаны.")
 }
