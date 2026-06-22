@@ -60,7 +60,7 @@ exp/
 |---|---|---|
 | Adapter | `adapter/` | Адаптация несовместимых интерфейсов (логгер) |
 | Decorator | `decorator/` | Кеширование Redis поверх БД |
-| Cached Repository | `cached_repository/` | In-memory кеш для репозитория |
+| Cached Repository | `cached_repo/` | In-memory кеш для репозитория |
 | Worker Pool | `worker_pool/` | Распределение задач по воркерам |
 | Pipeline | `read_process_write/` | Многостадийная обработка данных |
 
@@ -71,7 +71,7 @@ exp/
 | Generics | `generics/` | Параметры типов, constraints (Go 1.18+) |
 | Pointers | `pointers/` | Семантика указателей, pass-by-value |
 | Slices | `slices/` | Внутреннее устройство слайсов, append |
-| Defer | `defer/` | Порядок вызовов defer (LIFO) |
+| Defer | `defer/` | Момент вычисления аргументов отложенного вызова (ресивер-значение vs указатель vs замыкание) |
 | Fallthrough | `fallthrough/` | Поведение switch/fallthrough |
 | Interfaces | `interfaces/` | Реализация интерфейсов |
 | — simple | `interfaces/simple/` | Базовое удовлетворение интерфейса |

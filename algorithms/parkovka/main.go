@@ -68,7 +68,7 @@ func main() {
 	newYork := Point{Lat: 40.71278, Lon: -74.00594}
 
 	// Проверяем, существует ли парковка с такими координатами
-	fmt.Printf("Парковка в Токио (%v): %t\n", tokyoParking, ParkingSearch(tokyoParking))   // true
+	fmt.Printf("Парковка в Токио (%v): %t\n", tokyoParking, ParkingSearch(tokyoParking))    // true
 	fmt.Printf("Парковка в Москве (%v): %t\n", moscowParking, ParkingSearch(moscowParking)) // true
-	fmt.Printf("Парковка в Нью-Йорке (%v): %t\n", newYork, ParkingSearch(newYork))       // false
+	fmt.Printf("Парковка в Нью-Йорке (%v): %t\n", newYork, ParkingSearch(newYork))          // false
 }

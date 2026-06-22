@@ -51,7 +51,7 @@ func New{{ .EntityName }}Repository(db *gorm.DB) {{ .EntityName }}Repository {
 
 func (r {{ .EntityName }}Repository) Get({{ .PrimaryName }} {{ .PrimaryType}}) (*{{ .EntityName }}, error) {
     entity := new({{ .EntityName }})
-    err := r.db.Limit(1).Where("{{ .PrimarySQLName }} = ?", {{ .PrimaryName }}).Find(entity).Error()
+    err := r.db.Limit(1).Where("{{ .PrimarySQLName }} = ?", {{ .PrimaryName }}).Find(entity).Error
     return entity, err
 }
 
@@ -261,7 +261,7 @@ func main() {
 // Например, "MyFieldName" -> "my_field_name".
 func toSnakeCase(str string) string {
 	var matchFirstCap = regexp.MustCompile("(.)([A-Z][a-z]+)")
-	var matchAllCap   = regexp.MustCompile("([a-z0-9])([A-Z])")
+	var matchAllCap = regexp.MustCompile("([a-z0-9])([A-Z])")
 
 	snake := matchFirstCap.ReplaceAllString(str, "${1}_${2}")
 	snake = matchAllCap.ReplaceAllString(snake, "${1}_${2}")

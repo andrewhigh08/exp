@@ -20,6 +20,8 @@ var ErrNotFound = errors.New("not found")
 // Это позволяет нам использовать как реальные, так и тестовые (mock) реализации.
 type DatabaseHost interface {
 	DoQuery(ctx context.Context, query string) (string, error)
+	// Name возвращает имя хоста — нужно, чтобы наполнять Response.Host для логов.
+	Name() string
 }
 
 // Response — структура для передачи результата выполнения запроса через канал.
@@ -31,9 +33,9 @@ type Response struct {
 }
 
 const (
-	maxAttempts   = 3               // Максимальное количество попыток для одного запроса.
+	maxAttempts   = 3                      // Максимальное количество попыток для одного запроса.
 	retryInterval = 500 * time.Millisecond // Интервал между повторными попытками.
-	totalTimeout  = 2 * time.Second // Общий таймаут для всей операции DistributedQuery.
+	totalTimeout  = 2 * time.Second        // Общий таймаут для всей операции DistributedQuery.
 )
 
 // DistributedQuery выполняет запрос параллельно к нескольким репликам.
@@ -66,7 +68,7 @@ func DistributedQuery(query string, replicas []DatabaseHost) (string, error) {
 
 				// Успешный результат или ошибка ErrNotFound - отправляем в канал и выходим.
 				if err == nil || errors.Is(err, ErrNotFound) {
-					resCh <- Response{Message: resp, Err: err}
+					resCh <- Response{Message: resp, Err: err, Host: rep.Name()}
 					return
 				}
 
@@ -130,18 +132,22 @@ func DistributedQuery(query string, replicas []DatabaseHost) (string, error) {
 // mockHost имитирует хост базы данных.
 type mockHost struct {
 	name         string
-	flaky        bool // Если true, хост будет возвращать ошибки.
+	flaky        bool // Если true, хост возвращает временные ошибки (успех с 3-й попытки).
+	alwaysFail   bool // Если true, хост возвращает ошибку на всех попытках (исчерпание retry).
 	notFound     bool // Если true, хост вернет ошибку ErrNotFound.
 	slow         bool // Если true, хост будет отвечать медленно.
 	flakyCounter int
 }
+
+// Name реализует интерфейс DatabaseHost, возвращая имя хоста.
+func (h *mockHost) Name() string { return h.name }
 
 // DoQuery реализует интерфейс DatabaseHost для mockHost.
 func (h *mockHost) DoQuery(ctx context.Context, query string) (string, error) {
 	// Имитация долгого запроса
 	if h.slow {
 		select {
-		case <-time.After(1 * time.Second):
+		case <-time.After(3 * time.Second):
 			// Продолжаем выполнение
 		case <-ctx.Done():
 			return "", ctx.Err() // Возвращаем ошибку, если контекст отменен
@@ -150,6 +156,10 @@ func (h *mockHost) DoQuery(ctx context.Context, query string) (string, error) {
 
 	if h.notFound {
 		return "", ErrNotFound
+	}
+
+	if h.alwaysFail {
+		return "", errors.New("temporary connection error")
 	}
 
 	if h.flaky {
@@ -178,18 +188,16 @@ func main() {
 	}
 	// Ожидаемый результат: "result from Replica 2 (ok)"
 
-
 	fmt.Println("\n--- Сценарий 2: Все реплики возвращают ошибку ---")
 	replicas2 := []DatabaseHost{
-		&mockHost{name: "Replica 1 (flaky)", flaky: true},
-		&mockHost{name: "Replica 2 (flaky)", flaky: true},
+		&mockHost{name: "Replica 1 (failing)", alwaysFail: true},
+		&mockHost{name: "Replica 2 (failing)", alwaysFail: true},
 	}
 	result, err = DistributedQuery("SELECT * FROM users", replicas2)
 	if err != nil {
 		fmt.Printf("Error: %v\n", err)
 	}
 	// Ожидаемый результат: "all replicas failed after multiple retries"
-
 
 	fmt.Println("\n--- Сценарий 3: Таймаут ---")
 	replicas3 := []DatabaseHost{
@@ -204,7 +212,6 @@ func main() {
 		fmt.Printf("Error: %v\n", err)
 	}
 	// Ожидаемый результат: "query timed out after 2s"
-
 
 	fmt.Println("\n--- Сценарий 4: Одна реплика не находит данные, другая успешна ---")
 	replicas4 := []DatabaseHost{

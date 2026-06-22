@@ -19,7 +19,10 @@ import (
 // Это может быть база данных, внешний API и т.д.
 type Repository interface {
 	Get(key string) (string, error)
-	MGet(keys ...string) ([]string, error)
+	// MGet возвращает только найденные ключи в виде map[ключ]значение.
+	// Отсутствующие ключи в map не попадают — это позволяет отличить
+	// "ключа нет" от "значение — пустая строка".
+	MGet(keys ...string) (map[string]string, error)
 	Set(key, value string) error
 	Del(key string) error
 }
@@ -79,36 +82,39 @@ func (c *CachedRepository) Get(key string) (string, error) {
 func (c *CachedRepository) MGet(keys ...string) ([]string, error) {
 	results := make([]string, len(keys))
 	missingKeys := make([]string, 0)
-	// Создаем карту для быстрого поиска индекса ключа, чтобы избежать вложенного цикла.
-	keyIndexMap := make(map[string]int, len(keys))
-	for i, key := range keys {
-		keyIndexMap[key] = i
-	}
+	// Запоминаем исходную позицию каждого пропущенного ключа. Карта "ключ->индекс"
+	// здесь не годится: при дублирующихся ключах она потеряла бы все позиции, кроме
+	// последней, и часть результатов осталась бы пустой.
+	missingIdx := make([]int, 0)
 
 	c.mu.RLock()
-	for _, key := range keys {
+	for i, key := range keys {
 		if value, ok := c.cache[key]; ok {
 			fmt.Printf("[CACHE HIT] MGet key: %s\n", key)
-			results[keyIndexMap[key]] = value
+			results[i] = value
 		} else {
 			fmt.Printf("[CACHE MISS] MGet key: %s\n", key)
 			missingKeys = append(missingKeys, key)
+			missingIdx = append(missingIdx, i)
 		}
 	}
 	c.mu.RUnlock()
 
 	if len(missingKeys) > 0 {
 		fmt.Printf("MGet fetching %d missing keys from DB: %v\n", len(missingKeys), missingKeys)
-		missingValues, err := c.repo.MGet(missingKeys...)
+		found, err := c.repo.MGet(missingKeys...)
 		if err != nil {
 			return nil, err
 		}
 
 		c.mu.Lock()
-		for i, value := range missingValues {
-			key := missingKeys[i]
-			c.cache[key] = value
-			results[keyIndexMap[key]] = value
+		for i, key := range missingKeys {
+			// Кэшируем и подставляем в результат только реально найденные ключи,
+			// чтобы не "отравлять" кэш пустыми значениями несуществующих ключей.
+			if value, ok := found[key]; ok {
+				c.cache[key] = value
+				results[missingIdx[i]] = value
+			}
 		}
 		c.mu.Unlock()
 	}
@@ -167,13 +173,16 @@ func (db *mockDBRepository) Get(key string) (string, error) {
 	return "", fmt.Errorf("key not found")
 }
 
-func (db *mockDBRepository) MGet(keys ...string) ([]string, error) {
+func (db *mockDBRepository) MGet(keys ...string) (map[string]string, error) {
 	db.mu.Lock()
 	defer db.mu.Unlock()
 	time.Sleep(200 * time.Millisecond) // Пакетная операция тоже занимает время
-	results := make([]string, len(keys))
-	for i, key := range keys {
-		results[i] = db.data[key]
+	results := make(map[string]string)
+	for _, key := range keys {
+		// В map попадают только существующие ключи; отсутствующие пропускаем.
+		if val, ok := db.data[key]; ok {
+			results[key] = val
+		}
 	}
 	return results, nil
 }

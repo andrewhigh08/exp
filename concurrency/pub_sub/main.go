@@ -35,25 +35,22 @@ func (p *PubSubManager) Publish(topicID string, msg any) {
 
 	// Проверяем, есть ли подписчики на данный топик.
 	if subscribers, found := p.topics[topicID]; found {
-		// Клонируем срез подписчиков, чтобы не блокировать мьютекс надолго.
-		// Это быстрая операция, после которой можно отпустить мьютекс.
-		subsCopy := make([]chan any, len(subscribers))
-		copy(subsCopy, subscribers)
-
-		go func() {
-			// Отправляем сообщение всем подписчикам в отдельной горутине.
-			for _, subChan := range subsCopy {
-				// Используем неблокирующую отправку, чтобы медленный или неактивный
-				// подписчик не мог заблокировать рассылку для остальных.
-				select {
-				case subChan <- msg:
-				default:
-					// Если канал подписчика переполнен или заблокирован,
-					// мы просто пропускаем отправку ему этого сообщения.
-					log.Printf("Канал подписчика для топика '%s' заблокирован. Сообщение пропущено.", topicID)
-				}
+		// Отправляем сообщение всем подписчикам, не отпуская RLock.
+		// Это безопасно: отправка неблокирующая (select/default), поэтому RLock
+		// удерживается недолго. При этом удержание RLock на время отправки
+		// сериализует её с close() в Unsubscribe/Close (они берут блокировку на
+		// запись), что исключает панику "send on closed channel".
+		for _, subChan := range subscribers {
+			// Используем неблокирующую отправку, чтобы медленный или неактивный
+			// подписчик не мог заблокировать рассылку для остальных.
+			select {
+			case subChan <- msg:
+			default:
+				// Если канал подписчика переполнен или заблокирован,
+				// мы просто пропускаем отправку ему этого сообщения.
+				log.Printf("Канал подписчика для топика '%s' заблокирован. Сообщение пропущено.", topicID)
 			}
-		}()
+		}
 	}
 }
 
@@ -80,16 +77,28 @@ func (p *PubSubManager) Unsubscribe(topicID string, subChan chan any) {
 
 	if subscribers, found := p.topics[topicID]; found {
 		// Создаем новый срез, исключая из него отписавшийся канал.
-		newSubscribers := make([]chan any, 0, len(subscribers)-1)
+		// Ёмкость берём len(subscribers): при len == 0 значение -1 вызвало бы
+		// панику "makeslice: cap out of range".
+		newSubscribers := make([]chan any, 0, len(subscribers))
+		removed := false
 		for _, sub := range subscribers {
 			if sub != subChan {
 				newSubscribers = append(newSubscribers, sub)
+			} else {
+				removed = true
 			}
 		}
-		// Обновляем список подписчиков.
-		p.topics[topicID] = newSubscribers
-		// Закрываем канал, чтобы потребитель знал, что подписка прекращена.
-		close(subChan)
+		if len(newSubscribers) == 0 {
+			// Не оставляем в карте пустые топики.
+			delete(p.topics, topicID)
+		} else {
+			p.topics[topicID] = newSubscribers
+		}
+		// Закрываем канал только если он действительно был подписчиком этого топика —
+		// иначе можно закрыть чужой канал или получить повторное закрытие (double-close).
+		if removed {
+			close(subChan)
+		}
 	}
 }
 

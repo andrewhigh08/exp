@@ -29,7 +29,7 @@ func demo1_SubSlicing() {
 	// на тот же самый базовый массив, что и `original`.
 	sub := original[2:4]
 	printSliceInfo("sub     ", sub)
-	fmt.Println("=> `sub` указывает на тот же базовый массив, что и `original`.\n")
+	fmt.Println("=> `sub` указывает на тот же базовый массив, что и `original`.")
 
 	// Изменение элемента в под-срезе меняет и оригинальный срез!
 	fmt.Println("Изменяем sub[0] = 99")

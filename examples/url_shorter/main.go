@@ -43,6 +43,6 @@ func main() {
 	for _, str := range testCases {
 		// При вызове fmt.Println(str), Go автоматически обнаруживает,
 		// что тип `Abbreviator` имеет метод `String() string`, и вызывает его.
-		fmt.Printf("Исходная строка: '%s', результат: %s\n", str, str)
+		fmt.Printf("Исходная строка: '%s', результат: %s\n", string(str), str)
 	}
 }

@@ -62,4 +62,3 @@ func BenchmarkStringbilder(b *testing.B) {
 
 	}
 }
-

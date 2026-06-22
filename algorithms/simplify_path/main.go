@@ -60,14 +60,14 @@ func simplifyPath(path string) string {
 
 func main() {
 	testCases := map[string]string{
-		"/etc/":                            "/etc",
-		"/../../../../":                    "/",
-		"/first/second/../../third/":       "/third",
-		"/first/./second/./third":          "/first/second/third",
-		"/a/./b/../../c/":                  "/c",
-		"/home//foo/":                      "/home/foo",
-		"/":                                "/",
-		"/a/b/c":                           "/a/b/c",
+		"/etc/":                      "/etc",
+		"/../../../../":              "/",
+		"/first/second/../../third/": "/third",
+		"/first/./second/./third":    "/first/second/third",
+		"/a/./b/../../c/":            "/c",
+		"/home//foo/":                "/home/foo",
+		"/":                          "/",
+		"/a/b/c":                     "/a/b/c",
 	}
 
 	fmt.Println("--- Тестирование функции simplifyPath ---")

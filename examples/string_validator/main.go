@@ -83,7 +83,7 @@ func (sv *StringValidator) Validate(str string) bool {
 
 // createDummyPatternsFile создает временный файл с паттернами для демонстрации.
 func createDummyPatternsFile(filename string) error {
-	content := `^user_` + "\n" + `\d{3}$` + "\n" + `.*_test$`
+	content := `^user_` + "\n" + `\d{3}` + "\n" + `.*_test$`
 	return os.WriteFile(filename, []byte(content), 0644)
 }
 
@@ -106,10 +106,10 @@ func main() {
 	}
 
 	testCases := []string{
-		"user_123_test", // Валидно
-		"user_456",      // Невалидно (не заканчивается на _test)
-		"admin_123_test",// Невалидно (не начинается с user_)
-		"user_12_test",  // Невалидно (не 3 цифры)
+		"user_123_test",  // Валидно
+		"user_456",       // Невалидно (не заканчивается на _test)
+		"admin_123_test", // Невалидно (не начинается с user_)
+		"user_12_test",   // Невалидно (не 3 цифры)
 	}
 
 	fmt.Println("\n--- Результаты валидации ---")

@@ -91,7 +91,6 @@ func main() {
 	var petyaPtrWalker Walker = &petya // Тоже OK
 	fmt.Println("Реализация через указатель (&petya):", petyaPtrWalker.Walk())
 
-
 	// Рассмотрим другой случай, с ресивером-указателем.
 	dog := Dog{"Шарик"}
 	var dogPtrBarker Barker = &dog // OK: *Dog имеет метод Bark()

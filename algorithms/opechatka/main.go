@@ -48,9 +48,9 @@ func fixText(input string) string {
 
 func main() {
 	// Примеры для демонстрации
-	fmt.Printf("'ghbdtn' -> '%s'\n", fixText("ghbdtn"))    // привет
-	fmt.Printf("'не нflо' -> '%s'\n", fixText("не нflо"))  // не надо
-	fmt.Printf("'kexшиq' -> '%s'\n", fixText("kexшиq"))    // лучший
-	fmt.Printf("'Ghbdtn, Vbh!' -> '%s'\n", fixText("Ghbdtn, Vbh!")) // Привет, Мир!
-	fmt.Printf("'норм' -> '%s'\n", fixText("норм"))      // норм (без изменений)
+	fmt.Printf("'ghbdtn' -> '%s'\n", fixText("ghbdtn"))             // привет
+	fmt.Printf("'не нflо' -> '%s'\n", fixText("не нflо"))           // не надо
+	fmt.Printf("'kexшиq' -> '%s'\n", fixText("kexшиq"))             // лучший
+	fmt.Printf("'Ghbdtn, Vbh!' -> '%s'\n", fixText("Ghbdtn, Vbh!")) // Приветб Мир!
+	fmt.Printf("'норм' -> '%s'\n", fixText("норм"))                 // норм (без изменений)
 }
