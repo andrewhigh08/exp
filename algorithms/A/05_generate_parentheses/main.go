@@ -2,14 +2,14 @@ package main
 
 import "fmt"
 
-// generateParenthesis возвращает все правильные скобочные
+// genegateBrackets возвращает все правильные скобочные
 // последовательности из n пар скобок.
 //
 // Время: O(4^n / sqrt(n)) — число валидных последовательностей (n-е число
 // Каталана), умноженное на O(n) копирования каждой в результат.
 // Память: O(n) дополнительной — буфер на 2n байт и глубина рекурсии до 2n
 // (без учёта выходного среза, который занимает O(Каталан(n)·n)).
-func generateParenthesis(n int) []string {
+func genegateBrackets(n int) []string {
 	res := []string{}
 	if n <= 0 {
 		// 0 пар -> единственная "пустая" последовательность.
@@ -46,6 +46,6 @@ func generateParenthesis(n int) []string {
 }
 
 func main() {
-	fmt.Println(generateParenthesis(3))
+	fmt.Println(genegateBrackets(3))
 	// [((())) (()()) (())() ()(()) ()()()]
 }
