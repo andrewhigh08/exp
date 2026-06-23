@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-A personal Go learning/experiment repository (`github.com/andrewhigh08/exp`, Go 1.25.5).
+A personal Go learning/experiment repository (`github.com/andrewhigh08/exp`, Go 1.26.4).
 It is a catalog of small, self-contained programs grouped by topic: algorithms,
 concurrency patterns, design patterns, language features, runnable examples, and benchmarks.
 
@@ -18,7 +18,7 @@ it to locate a topic rather than re-scanning the tree.
   time. There is no application entry point or service to "start".
 
 - **This is a multi-module workspace — there are three separate `go.mod` files:**
-  - root: `github.com/andrewhigh08/exp` (Go 1.25.5, requires `golang.org/x/sync`)
+  - root: `github.com/andrewhigh08/exp` (Go 1.26.4, requires `golang.org/x/sync`)
   - `code_generation/`: module `repogen` (Go 1.22.2, requires `golang.org/x/tools`, GORM)
   - `concurrency/errgroup/`: module `eg` (Go 1.24.1, requires `golang.org/x/sync`)
 
