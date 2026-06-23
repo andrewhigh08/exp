@@ -11,15 +11,15 @@ type Node struct {
 // Tree — список узлов (срез Node).
 type Tree = []Node
 
-// joinPath вручную склеивает накопленные сегменты пути через " => "
+// formatPath вручную склеивает накопленные сегменты пути через " => "
 // (strings.Join запрещён — собираем строку сами).
-func joinPath(path []string) string {
+func formatPath(path []string) string {
 	res := ""
-	for i, seg := range path {
+	for i, v := range path {
 		if i > 0 {
 			res += " => "
 		}
-		res += seg
+		res += v
 	}
 	return res
 }
@@ -34,7 +34,7 @@ func dfs(nodes Tree, path []string) {
 	for _, n := range nodes {
 		path = append(path, n.title) // добавляем текущий сегмент
 		if len(n.children) == 0 {
-			fmt.Println(joinPath(path)) // лист — печатаем путь
+			fmt.Println(formatPath(path)) // лист — печатаем путь
 		} else {
 			dfs(n.children, path) // спускаемся глубже
 		}
