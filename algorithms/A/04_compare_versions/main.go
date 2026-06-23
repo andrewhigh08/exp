@@ -27,8 +27,8 @@ func compareVersions(v1, v2 string) (res int, ok bool) {
 	i, j := 1, 1
 	n, m := len(v1), len(v2)
 	for i < n || j < m {
-		a, ni := nextSegment(v1, i, n) // число сегмента и новая позиция
-		b, nj := nextSegment(v2, j, m)
+		a, ni := segment(v1, i, n) // число сегмента и новая позиция
+		b, nj := segment(v2, j, m)
 		if a < b {
 			return 1, true // v1 < v2
 		}
@@ -46,23 +46,22 @@ func validate(s string) bool {
 	if len(s) < 2 || s[0] != 'v' {
 		return false
 	}
-	for k := 1; k < len(s); k++ {
-		c := s[k]
-		if c == '.' {
+	for r := 1; r < len(s); r++ {
+		if s[r] == '.' {
 			continue
 		}
-		if c < '0' || c > '9' {
+		if s[r] < '0' || s[r] > '9' {
 			return false
 		}
 	}
 	return true
 }
 
-// nextSegment парсит одно число начиная с позиции i (накопление d=c-'0'),
+// segment парсит одно число начиная с позиции i (накопление d=c-'0'),
 // останавливается на '.' или конце строки. Возвращает значение сегмента
 // и позицию следующего сегмента (за точкой). Пустой сегмент (например "v..1"
 // или хвостовая точка) даёт значение 0.
-func nextSegment(s string, i, n int) (val, next int) {
+func segment(s string, i, n int) (val, next int) {
 	for i < n && s[i] != '.' {
 		val = val*10 + int(s[i]-'0') // парсинг без strconv
 		i++
@@ -74,7 +73,7 @@ func nextSegment(s string, i, n int) (val, next int) {
 }
 
 func main() {
-	r1, _ := compareVersions("v11.22.44", "v11.22.45")
-	r2, _ := compareVersions("v11.22.44", "v11.22.44")
-	fmt.Println(r1, r2) // 1 0
+	res1, _ := compareVersions("v11.22.44", "v11.22.45")
+	res2, _ := compareVersions("v11.22.44", "v11.22.44")
+	fmt.Println(res1, res2) // 1 0
 }
