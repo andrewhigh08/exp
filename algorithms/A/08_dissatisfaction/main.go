@@ -64,8 +64,9 @@ func lowerBound(a []int, target int) int {
 	return lo
 }
 
-// totalDissatisfaction сортирует goods на месте и для каждой потребности
-// бинпоиском находит позицию вставки, сравнивая левого и правого соседа.
+// totalDissatisfaction — версия без stdlib (свои quicksort и бинпоиск).
+// Сортирует goods на месте и для каждой потребности бинпоиском находит позицию
+// вставки, сравнивая левого и правого соседа. Версия на пакете sort лежит в ./stdlib.
 //
 // Время: O((N+M)·log N) — сортировка goods за O(N log N) плюс M бинарных
 // поисков по O(log N); N=len(goods), M=len(buyerNeeds).
