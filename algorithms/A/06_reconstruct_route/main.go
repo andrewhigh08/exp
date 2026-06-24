@@ -17,9 +17,9 @@ func reconstructRoute(tickets []Ticket) []Ticket {
 	if n <= 1 {
 		// Пустой вход или один билет — маршрут совпадает со входом.
 		// Возвращаем копию, чтобы не отдавать наружу исходный слайс.
-		out := make([]Ticket, n)
-		copy(out, tickets)
-		return out
+		res := make([]Ticket, n)
+		copy(res, tickets)
+		return res
 	}
 
 	// byFrom: быстрый переход из города по ребру маршрута.
@@ -44,9 +44,9 @@ func reconstructRoute(tickets []Ticket) []Ticket {
 	}
 	if !found {
 		// Нет однозначного старта (цикл/некорректный вход) — отдаём копию входа.
-		out := make([]Ticket, n)
-		copy(out, tickets)
-		return out
+		res := make([]Ticket, n)
+		copy(res, tickets)
+		return res
 	}
 
 	// Идём from->to, перекладывая билеты в порядке следования.
