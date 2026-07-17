@@ -23,6 +23,9 @@ import (
 // @param {int} height - высота поля (для полноты картины, хотя в данном алгоритме не используется напрямую).
 // @return {int} - количество кораблей.
 func calculateShips(battleField []int, width int) (int, error) {
+	if width <= 0 {
+		return 0, fmt.Errorf("ширина поля должна быть положительной, получено: %d", width)
+	}
 	if len(battleField) == 0 {
 		return 0, nil
 	}

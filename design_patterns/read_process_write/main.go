@@ -12,8 +12,6 @@ import (
 	"log"
 	"strings"
 	"sync"
-
-	"golang.org/x/sync/errgroup"
 )
 
 // Data — структура данных, которую мы обрабатываем.
@@ -66,12 +64,17 @@ func (dm *DataManager) Manage() {
 
 	var finalResults []*Data
 	var finalMu sync.Mutex // Мьютекс для безопасного добавления в общий срез результатов
-	var eg errgroup.Group
+	var wg sync.WaitGroup
 
 	// Обрабатываем каждый элемент из начального набора в отдельной горутине.
+	// Ошибки процессоров некритичны: элемент пропускается, пайплайн продолжается.
+	// Поэтому здесь WaitGroup, а не errgroup (errgroup нужен, когда первая ошибка
+	// должна отменить остальных и всплыть наверх).
 	for _, item := range initialData {
 		item := item // Создаем локальную копию для безопасного использования в замыкании.
-		eg.Go(func() error {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
 			// `currentData` представляет собой набор данных на входе для цепочки процессоров.
 			// Начинаем с одного элемента.
 			currentData := []*Data{item}
@@ -106,15 +109,10 @@ func (dm *DataManager) Manage() {
 				finalResults = append(finalResults, currentData...)
 				finalMu.Unlock()
 			}
-			return nil
-		})
+		}()
 	}
 
-	// Ожидаем завершения всех горутин. errgroup вернет первую возникшую ошибку.
-	if err := eg.Wait(); err != nil {
-		log.Printf("Произошла критическая ошибка в одной из горутин: %v", err)
-		return
-	}
+	wg.Wait()
 
 	// Записываем все собранные результаты одним пакетом.
 	if len(finalResults) > 0 {

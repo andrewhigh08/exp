@@ -43,7 +43,13 @@ func worker(workerID int, egCtx context.Context, shouldFail bool) error {
 		}
 
 		fmt.Printf("Воркер %d: выполняет шаг %d\n", workerID, j)
-		time.Sleep(100 * time.Millisecond)
+		// Sleep через select, чтобы отмена errgroup прерывала ожидание сразу.
+		select {
+		case <-egCtx.Done():
+			fmt.Printf("Воркер %d: получил сигнал отмены. Завершение...\n", workerID)
+			return egCtx.Err()
+		case <-time.After(100 * time.Millisecond):
+		}
 	}
 	fmt.Printf("Воркер %d: успешно завершил всю работу.\n", workerID)
 	return nil

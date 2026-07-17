@@ -84,7 +84,7 @@ exp/
 | Пример | Описание |
 |---|---|
 | `json_config` | HTTP-сервер с динамической перезагрузкой конфигурации |
-| `url_shorter` | Сокращатель URL (`fmt.Stringer`) |
+| `url_shorter` | Numeronym / аббревиатура строк (`fmt.Stringer`), не URL-shortener |
 | `cli_spinner` | Анимация спиннера в терминале |
 | `string_validator` | Валидация строк через регулярные выражения |
 
@@ -93,7 +93,7 @@ exp/
 Сравнение производительности:
 
 - **Аллокация слайсов** — append с малой ёмкостью vs оптимальная ёмкость vs преаллокация
-- **Конкатенация строк** — `fmt.Sprintf` vs `strconv.Itoa` vs `strings.Builder`
+- **Сборка строк** — `+=` + `fmt.Sprintf` vs `+=` + `strconv.Itoa` vs `strings.Builder`
 
 ```bash
 cd benchmarks

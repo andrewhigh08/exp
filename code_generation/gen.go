@@ -1,4 +1,6 @@
-package main
+// Package entity — демо-модели для go generate (не package main, чтобы
+// `go build ./...` в модуле code_generation не требовал func main).
+package entity
 
 //go:generate repogen
 

@@ -51,6 +51,8 @@ func main() {
 	fmt.Printf("'ghbdtn' -> '%s'\n", fixText("ghbdtn"))             // привет
 	fmt.Printf("'не нflо' -> '%s'\n", fixText("не нflо"))           // не надо
 	fmt.Printf("'kexшиq' -> '%s'\n", fixText("kexшиq"))             // лучший
-	fmt.Printf("'Ghbdtn, Vbh!' -> '%s'\n", fixText("Ghbdtn, Vbh!")) // Привет, Мир!
+	// Запятая на QWERTY — та же клавиша, что «б» на ЙЦУКЕН, поэтому "," → "б".
+	fmt.Printf("'Ghbdtn, Vbh!' -> '%s'\n", fixText("Ghbdtn, Vbh!")) // Приветб Мир!
+	fmt.Printf("'Ghbdtn Vbh!' -> '%s'\n", fixText("Ghbdtn Vbh!"))   // Привет Мир!
 	fmt.Printf("'норм' -> '%s'\n", fixText("норм"))                 // норм (без изменений)
 }

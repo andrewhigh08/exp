@@ -26,10 +26,14 @@ func MyChanGroup(ctx context.Context, addrs []string) error {
 	// 2. Буферизированный канал (оптимизация)
 	ch := make(chan Resp, len(addrs))
 
-	// Имитация клиента
+	// Имитация клиента: уважает ctx (на реальном I/O — через http.NewRequestWithContext и т.п.).
 	clMock := func(ctx context.Context, addr string) (Resp, error) {
-		// Здесь реальная логика, которая уважает ctx
-		return Resp{Response: []byte("data from " + addr)}, nil
+		select {
+		case <-ctx.Done():
+			return Resp{}, ctx.Err()
+		default:
+			return Resp{Response: []byte("data from " + addr)}, nil
+		}
 	}
 
 	g.SetLimit(10) // Максимум 10 активных горутин одновременно

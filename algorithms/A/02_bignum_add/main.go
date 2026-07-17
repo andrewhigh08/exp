@@ -15,6 +15,18 @@ func addDigits(a, b []int) []int {
 		return []int{0}
 	}
 
+	// Контракт: каждый элемент — цифра 0..9. Иначе размер буфера и %10 некорректны.
+	for _, d := range a {
+		if d < 0 || d > 9 {
+			panic(fmt.Sprintf("addDigits: digit out of range in a: %d", d))
+		}
+	}
+	for _, d := range b {
+		if d < 0 || d > 9 {
+			panic(fmt.Sprintf("addDigits: digit out of range in b: %d", d))
+		}
+	}
+
 	i := len(a) - 1 // указатель на младший разряд a
 	j := len(b) - 1 // указатель на младший разряд b
 

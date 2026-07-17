@@ -1,4 +1,4 @@
-// go test -bench . -benchmem ./bench/slice_test.go
+// go test -bench . -benchmem
 package bench
 
 import "testing"

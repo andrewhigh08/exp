@@ -24,20 +24,23 @@ func producer(ctx context.Context, ch chan<- int, wg *sync.WaitGroup) {
 	defer close(ch)
 
 	for {
+		n := rand.IntN(100)
+
+		// Send и ctx.Done() в одном select: при отмене не зависаем на блокирующей отправке.
 		select {
 		case <-ctx.Done():
-			// Контекст был отменен, завершаем работу.
 			fmt.Println("Производитель: контекст отменен, прекращаю генерацию.")
-			return // defer'ы будут вызваны здесь.
-
-		default:
-			// Генерируем случайное число и отправляем его в канал.
-			n := rand.IntN(100)
-			ch <- n
+			return
+		case ch <- n:
 			fmt.Printf("Производитель: отправил %d\n", n)
+		}
 
-			// Небольшая задержка для имитации работы.
-			time.Sleep(500 * time.Millisecond)
+		// Задержка тоже отменяема: иначе graceful shutdown ждал бы Sleep до конца.
+		select {
+		case <-ctx.Done():
+			fmt.Println("Производитель: контекст отменен, прекращаю генерацию.")
+			return
+		case <-time.After(500 * time.Millisecond):
 		}
 	}
 }

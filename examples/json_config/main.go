@@ -27,34 +27,37 @@ type Config struct {
 type App struct {
 	config Config
 	mu     sync.RWMutex // RWMutex идеален для конфига: много читателей, редкие писатели.
+	client *http.Client // HTTP-клиент с таймаутом для опроса серверов.
 }
 
-// loadConfig периодически читает и обновляет конфигурацию приложения.
+// reloadConfig один раз читает и применяет конфигурацию. Возвращает ошибку при сбое.
+func (a *App) reloadConfig(path string) error {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return err
+	}
+
+	var newConfig Config
+	if err := json.Unmarshal(data, &newConfig); err != nil {
+		return err
+	}
+
+	a.mu.Lock()
+	a.config = newConfig
+	a.mu.Unlock()
+	return nil
+}
+
+// loadConfigLoop периодически перечитывает конфигурацию.
 // Эта функция должна запускаться в отдельной горутине.
-func (a *App) loadConfig(path string) {
+func (a *App) loadConfigLoop(path string) {
 	for {
-		// Читаем файл
-		data, err := os.ReadFile(path)
-		if err != nil {
-			log.Printf("Ошибка чтения файла конфигурации '%s': %v", path, err)
-			time.Sleep(5 * time.Second) // В случае ошибки повторяем не так часто
+		time.Sleep(5 * time.Second)
+		if err := a.reloadConfig(path); err != nil {
+			log.Printf("Ошибка обновления конфигурации '%s': %v", path, err)
 			continue
 		}
-
-		var newConfig Config
-		if err := json.Unmarshal(data, &newConfig); err != nil {
-			log.Printf("Ошибка парсинга JSON из файла '%s': %v", path, err)
-			time.Sleep(5 * time.Second)
-			continue
-		}
-
-		// Блокируем мьютекс на запись, чтобы безопасно обновить конфигурацию.
-		a.mu.Lock()
-		a.config = newConfig
-		a.mu.Unlock()
-
 		log.Println("Конфигурация успешно обновлена.")
-		time.Sleep(5 * time.Second) // Перезагружаем каждые 5 секунд
 	}
 }
 
@@ -79,8 +82,8 @@ func (a *App) pingHandler(w http.ResponseWriter, r *http.Request) {
 		go func(url string) {
 			defer wg.Done()
 
-			// Выполняем GET-запрос.
-			resp, err := http.Get(url)
+			// GET с таймаутом клиента (без него зависший peer блокирует обработчик навсегда).
+			resp, err := a.client.Get(url)
 			var status string
 			if err != nil {
 				status = "ERROR: " + err.Error()
@@ -113,11 +116,17 @@ func main() {
 
 	// Создаем экземпляр нашего приложения.
 	app := &App{
-		config: Config{},
+		client: &http.Client{Timeout: 5 * time.Second},
 	}
 
-	// Запускаем горутину для динамической перезагрузки конфига.
-	go app.loadConfig(*configPath)
+	// Загружаем конфиг до ListenAndServe, чтобы /ping сразу видел валидный список.
+	if err := app.reloadConfig(*configPath); err != nil {
+		log.Fatalf("Не удалось загрузить конфигурацию '%s': %v", *configPath, err)
+	}
+	log.Println("Конфигурация успешно загружена.")
+
+	// Фоновая перезагрузка конфига.
+	go app.loadConfigLoop(*configPath)
 
 	// Регистрируем обработчик эндпоинта.
 	http.HandleFunc("/ping", app.pingHandler)

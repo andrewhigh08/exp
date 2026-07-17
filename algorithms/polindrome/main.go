@@ -27,8 +27,13 @@ func isPalindromeSimple(st string) bool {
 	return true
 }
 
-// isPalindromeAdvanced — это более сложная проверка на палиндром.
-// Она нечувствительна к регистру и игнорирует все символы, кроме букв.
+// isSignificant — буква или цифра (как в типичных alphanumeric-палиндромах на интервью).
+func isSignificant(r rune) bool {
+	return unicode.IsLetter(r) || unicode.IsDigit(r)
+}
+
+// isPalindromeAdvanced — более сложная проверка на палиндром.
+// Нечувствительна к регистру; игнорирует всё, кроме букв и цифр.
 func isPalindromeAdvanced(st string) bool {
 	// Приводим всю строку к нижнему регистру для регистронезависимого сравнения.
 	lowerSt := strings.ToLower(st)
@@ -38,18 +43,18 @@ func isPalindromeAdvanced(st string) bool {
 	left, right := 0, len(runes)-1
 
 	for left < right {
-		// Пропускаем все не-буквенные символы слева.
-		if !unicode.IsLetter(runes[left]) {
+		// Пропускаем пунктуацию/пробелы слева.
+		if !isSignificant(runes[left]) {
 			left++
 			continue
 		}
-		// Пропускаем все не-буквенные символы справа.
-		if !unicode.IsLetter(runes[right]) {
+		// Пропускаем пунктуацию/пробелы справа.
+		if !isSignificant(runes[right]) {
 			right--
 			continue
 		}
 
-		// Сравниваем буквы.
+		// Сравниваем значимые символы.
 		if runes[left] != runes[right] {
 			return false
 		}
@@ -70,6 +75,8 @@ func main() {
 		"торрот",
 		"А роза упала на лапу Азора",     // Классический палиндром с пробелами
 		"Eva, can I see bees in a cave?", // Английский палиндром со знаками препинания
+		"A1b2b1a",                        // Alphanumeric-палиндром
+		"0P",                             // Не палиндром (цифра и буква)
 		"привет",                         // Не палиндром
 		"а",                              // Палиндром из одного символа
 		"",                               // Пустая строка считается палиндромом

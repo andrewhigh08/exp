@@ -10,7 +10,6 @@ package main
 
 import (
 	"fmt"
-	"strings"
 	"sync"
 	"time"
 )
@@ -36,6 +35,9 @@ type CachedRepository struct {
 	cache map[string]string // In-memory кэш
 	mu    sync.RWMutex      // Мьютекс для потокобезопасного доступа к кэшу
 }
+
+// Проверка на этапе компиляции: декоратор действительно реализует Repository.
+var _ Repository = (*CachedRepository)(nil)
 
 // NewCachedRepository создает новый экземпляр кэширующего репозитория.
 func NewCachedRepository(repo Repository) *CachedRepository {
@@ -79,23 +81,19 @@ func (c *CachedRepository) Get(key string) (string, error) {
 
 // MGet выполняет пакетное получение данных.
 // Он эффективно находит ключи, которых нет в кэше, и запрашивает только их.
-func (c *CachedRepository) MGet(keys ...string) ([]string, error) {
-	results := make([]string, len(keys))
+// Контракт совпадает с Repository: в map попадают только найденные ключи.
+func (c *CachedRepository) MGet(keys ...string) (map[string]string, error) {
+	results := make(map[string]string, len(keys))
 	missingKeys := make([]string, 0)
-	// Запоминаем исходную позицию каждого пропущенного ключа. Карта "ключ->индекс"
-	// здесь не годится: при дублирующихся ключах она потеряла бы все позиции, кроме
-	// последней, и часть результатов осталась бы пустой.
-	missingIdx := make([]int, 0)
 
 	c.mu.RLock()
-	for i, key := range keys {
+	for _, key := range keys {
 		if value, ok := c.cache[key]; ok {
 			fmt.Printf("[CACHE HIT] MGet key: %s\n", key)
-			results[i] = value
+			results[key] = value
 		} else {
 			fmt.Printf("[CACHE MISS] MGet key: %s\n", key)
 			missingKeys = append(missingKeys, key)
-			missingIdx = append(missingIdx, i)
 		}
 	}
 	c.mu.RUnlock()
@@ -108,13 +106,11 @@ func (c *CachedRepository) MGet(keys ...string) ([]string, error) {
 		}
 
 		c.mu.Lock()
-		for i, key := range missingKeys {
+		for key, value := range found {
 			// Кэшируем и подставляем в результат только реально найденные ключи,
 			// чтобы не "отравлять" кэш пустыми значениями несуществующих ключей.
-			if value, ok := found[key]; ok {
-				c.cache[key] = value
-				results[missingIdx[i]] = value
-			}
+			c.cache[key] = value
+			results[key] = value
 		}
 		c.mu.Unlock()
 	}
@@ -122,27 +118,31 @@ func (c *CachedRepository) MGet(keys ...string) ([]string, error) {
 	return results, nil
 }
 
-// Set реализует стратегию "Write-Through" (с некоторыми упрощениями).
-// Сначала обновляем кэш, затем основное хранилище.
+// Set реализует стратегию "Write-Through": сначала основное хранилище, затем кэш.
+// Так при ошибке БД кэш не расходится с источником истины.
 func (c *CachedRepository) Set(key, value string) error {
-	fmt.Printf("Set key: %s. Updating cache and DB.\n", key)
+	fmt.Printf("Set key: %s. Updating DB and cache.\n", key)
+	if err := c.repo.Set(key, value); err != nil {
+		return err
+	}
+
 	c.mu.Lock()
 	c.cache[key] = value
 	c.mu.Unlock()
-
-	// Передаем вызов дальше, в основной репозиторий.
-	return c.repo.Set(key, value)
+	return nil
 }
 
-// Del реализует стратегию "Write-Through" для удаления.
-// Сначала удаляем из кэша, затем из основного хранилища.
+// Del реализует стратегию "Write-Through" для удаления: сначала БД, затем кэш.
 func (c *CachedRepository) Del(key string) error {
-	fmt.Printf("Del key: %s. Deleting from cache and DB.\n", key)
+	fmt.Printf("Del key: %s. Deleting from DB and cache.\n", key)
+	if err := c.repo.Del(key); err != nil {
+		return err
+	}
+
 	c.mu.Lock()
 	delete(c.cache, key)
 	c.mu.Unlock()
-
-	return c.repo.Del(key)
+	return nil
 }
 
 // --- Mock-реализация для демонстрации ---
@@ -162,6 +162,8 @@ func newMockDB() *mockDBRepository {
 		},
 	}
 }
+
+var _ Repository = (*mockDBRepository)(nil)
 
 func (db *mockDBRepository) Get(key string) (string, error) {
 	db.mu.Lock()
@@ -219,11 +221,11 @@ func main() {
 
 	fmt.Println("--- Запрос MGet ---")
 	vals, _ := cachedRepo.MGet("user:1", "user:2", "user:3")
-	fmt.Printf("Получены значения: %s\n\n", strings.Join(vals, ", "))
+	fmt.Printf("Получены значения: %v\n\n", vals)
 
 	fmt.Println("--- Второй запрос MGet (user:1 и user:2 из кэша) ---")
 	vals, _ = cachedRepo.MGet("user:1", "user:2", "user:3")
-	fmt.Printf("Получены значения: %s\n\n", strings.Join(vals, ", "))
+	fmt.Printf("Получены значения: %v\n\n", vals)
 
 	fmt.Println("--- Запрос Set ---")
 	_ = cachedRepo.Set("user:4", "Alice")

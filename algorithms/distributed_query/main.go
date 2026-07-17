@@ -94,13 +94,19 @@ func DistributedQuery(query string, replicas []DatabaseHost) (string, error) {
 		close(resCh)
 	}()
 
+	// notFoundCount — сколько реплик вернули terminal ErrNotFound.
+	// Если все реплики ответили NotFound, это осмысленный ответ, а не "all failed".
+	notFoundCount := 0
+
 	// Основной цикл ожидания результатов.
 	for {
 		select {
 		case resp, ok := <-resCh:
 			if !ok {
-				// Канал закрыт, и мы не получили ни одного успешного ответа.
-				// Это означает, что все реплики вернули ошибку (кроме ErrNotFound).
+				// Канал закрыт, успешного ответа не было.
+				if len(replicas) > 0 && notFoundCount == len(replicas) {
+					return "", ErrNotFound
+				}
 				return "", errors.New("all replicas failed after multiple retries")
 			}
 
@@ -111,12 +117,11 @@ func DistributedQuery(query string, replicas []DatabaseHost) (string, error) {
 				return resp.Message, nil
 			}
 
-			// Если пришла ошибка ErrNotFound, мы не можем считать ее успехом,
-			// но и повторять запрос к этой реплике бессмысленно. Мы просто игнорируем ее
-			// и ждем ответов от других реплик.
+			// ErrNotFound — terminal-ответ реплики (без retry). Ждём остальные;
+			// если все так ответят, вернём ErrNotFound при закрытии канала.
 			if errors.Is(resp.Err, ErrNotFound) {
 				fmt.Printf("Result from %s: %s\n", resp.Host, resp.Err)
-				// Продолжаем ждать более подходящего ответа.
+				notFoundCount++
 				continue
 			}
 
@@ -225,4 +230,17 @@ func main() {
 		fmt.Printf("Final Result: %s\n", result)
 	}
 	// Ожидаемый результат: "result from Replica 2 (ok)"
+
+	fmt.Println("\n--- Сценарий 5: Все реплики возвращают NotFound ---")
+	replicas5 := []DatabaseHost{
+		&mockHost{name: "Replica 1 (not found)", notFound: true},
+		&mockHost{name: "Replica 2 (not found)", notFound: true},
+	}
+	result, err = DistributedQuery("SELECT * FROM users WHERE id=999", replicas5)
+	if err != nil {
+		fmt.Printf("Error: %v\n", err)
+	} else {
+		fmt.Printf("Final Result: %s\n", result)
+	}
+	// Ожидаемый результат: ErrNotFound
 }

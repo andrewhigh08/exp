@@ -1,4 +1,12 @@
-// go test -bench . -benchmem ./bench/string_test.go
+// go test -bench . -benchmem
+//
+// Сравниваем способы сборки строки из чисел:
+//  - += с fmt.Sprintf
+//  - += с strconv.Itoa
+//  - strings.Builder + strconv.Itoa
+//
+// Важно: первые два бенчмарка включают стоимость конкатенации через +=
+// (квадратичные аллокации), а не только конвертацию int→string.
 package bench
 
 import (
@@ -8,57 +16,41 @@ import (
 	"testing"
 )
 
-func BenchmarkStr(b *testing.B) {
+const nNums = 100
 
+func BenchmarkSprintfPlus(b *testing.B) {
+	var sink string
 	for i := 0; i < b.N; i++ {
 		st := ""
-
-		for i := 0; i < 100; i++ {
-			st += fmt.Sprintf("%d", i)
+		for j := 0; j < nNums; j++ {
+			st += fmt.Sprintf("%d", j)
 		}
-
-		st = ""
-
-		for i := 0; i < 100; i++ {
-			st += fmt.Sprintf("%d", i)
-		}
-
+		sink = st
 	}
-
+	_ = sink
 }
 
-func BenchmarkConv(b *testing.B) {
-
+func BenchmarkItoaPlus(b *testing.B) {
+	var sink string
 	for i := 0; i < b.N; i++ {
 		st := ""
-
-		for i := 0; i < 100; i++ {
-			st += strconv.Itoa(i)
+		for j := 0; j < nNums; j++ {
+			st += strconv.Itoa(j)
 		}
-
-		st = ""
-
-		for i := 0; i < 100; i++ {
-			st += strconv.Itoa(i)
-		}
+		sink = st
 	}
-
+	_ = sink
 }
 
-func BenchmarkStringbilder(b *testing.B) {
-
+func BenchmarkBuilderItoa(b *testing.B) {
+	var sink string
 	for i := 0; i < b.N; i++ {
 		var builder strings.Builder
-
-		for i := 0; i < 100; i++ {
-			builder.WriteString(strconv.Itoa(i))
+		builder.Grow(nNums * 2) // грубая оценка; убирает лишние реаллокации
+		for j := 0; j < nNums; j++ {
+			builder.WriteString(strconv.Itoa(j))
 		}
-
-		var builder2 strings.Builder
-
-		for i := 0; i < 100; i++ {
-			builder2.WriteString(strconv.Itoa(i))
-		}
-
+		sink = builder.String()
 	}
+	_ = sink
 }
