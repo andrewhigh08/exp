@@ -53,6 +53,7 @@ exp/
 | `maps/writes` | Конкурентная запись | `sync.Mutex` |
 | `max_procs` | GOMAXPROCS | Планировщик, недетерминизм |
 | `spb_ekt_msk` | Fan-in паттерн | Несколько горутин → один канал |
+| `processor` | Асинхронный обработчик задач | Safe channel close, `sync.RWMutex`, `sync.Once` |
 
 ## Паттерны проектирования (`design_patterns/`)
 
@@ -77,6 +78,7 @@ exp/
 | — simple | `interfaces/simple/` | Базовое удовлетворение интерфейса |
 | — abc | `interfaces/abc/` | Встраивание, type assertions |
 | — difficult | `interfaces/difficult/` | nil-интерфейсы vs nil-значения |
+| — typed_nil | `interfaces/typed_nil/` | `v == nil` не ловит typed nil (`*T` в interface) |
 | — log_aggregator | `interfaces/log_aggregator/` | Конкурентный пайплайн с интерфейсами |
 
 ## Практические примеры (`examples/`)
