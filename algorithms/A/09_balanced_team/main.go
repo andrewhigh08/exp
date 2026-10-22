@@ -40,7 +40,7 @@ func smallestRangeByRole(levels map[string][]int) (Result, bool) {
 
 	// curMax — максимум среди текущих выбранных; поддерживаем инкрементально.
 	curMax := minInt
-	for i := 0; i < K; i++ {
+	for i := range K {
 		if v := arrs[i][0]; v > curMax {
 			curMax = v
 		}
@@ -81,7 +81,7 @@ func smallestRangeByRole(levels map[string][]int) (Result, bool) {
 	}
 
 	res := make(Result, K)
-	for i := 0; i < K; i++ {
+	for i := range K {
 		res[roles[i]] = arrs[i][bestIdx[i]]
 	}
 	return res, true

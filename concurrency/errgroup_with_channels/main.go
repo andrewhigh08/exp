@@ -39,8 +39,6 @@ func MyChanGroup(ctx context.Context, addrs []string) error {
 	g.SetLimit(10) // Максимум 10 активных горутин одновременно
 
 	for _, addr := range addrs {
-		addr := addr // Shadowing (для версий Go < 1.22)
-
 		// 3. g.Go запускает горутину. Не нужно Add/Done.
 		g.Go(func() error {
 			// Используем ctxGroup! Если соседняя горутина упадет, этот контекст закроется.

@@ -48,7 +48,7 @@ func sumPyramidRowNaive(n int) int {
 	// Шаг 2: Суммируем n нечетных чисел, начиная со startNumber.
 	sum := 0
 	currentNumber := startNumber
-	for i := 0; i < n; i++ {
+	for range n {
 		sum += currentNumber
 		// Переходим к следующему нечетному числу.
 		currentNumber += 2

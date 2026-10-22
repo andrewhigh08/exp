@@ -27,7 +27,7 @@ func main() {
 	wg.Add(writes)
 	fmt.Printf("Запуск %d горутин для записи в карту...\n", writes)
 
-	for i := 0; i < writes; i++ {
+	for i := range writes {
 		go func(workerID int) {
 			defer wg.Done()
 

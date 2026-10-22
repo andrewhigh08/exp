@@ -21,7 +21,7 @@ func main() {
 
 	// `sourceData` содержит исходные данные с дубликатами.
 	sourceData := make([]int, 0, capacity)
-	for i := 0; i < capacity; i++ {
+	for range capacity {
 		sourceData = append(sourceData, rand.Intn(100)) // Генерируем числа от 0 до 99.
 	}
 

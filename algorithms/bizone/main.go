@@ -14,7 +14,7 @@ import (
 // Data - структура данных, которую мы обрабатываем в нашем конвейере.
 type Data struct {
 	ID      int
-	Payload map[string]interface{}
+	Payload map[string]any
 }
 
 // Reader определяет интерфейс для источника данных.
@@ -124,9 +124,9 @@ type mockReader struct{}
 
 func (r *mockReader) Read() []*Data {
 	return []*Data{
-		{ID: 1, Payload: map[string]interface{}{"value": 10}},
-		{ID: 2, Payload: map[string]interface{}{"value": 20}},
-		{ID: 3, Payload: map[string]interface{}{"value": 30}},
+		{ID: 1, Payload: map[string]any{"value": 10}},
+		{ID: 2, Payload: map[string]any{"value": 20}},
+		{ID: 3, Payload: map[string]any{"value": 30}},
 	}
 }
 

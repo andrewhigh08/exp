@@ -15,7 +15,7 @@ func runWorkers(description string) {
 	var wg sync.WaitGroup
 	wg.Add(5)
 
-	for i := 0; i < 5; i++ {
+	for i := range 5 {
 		// Передаем `i` как аргумент, чтобы каждая горутина получила свой уникальный ID.
 		go func(workerID int) {
 			defer wg.Done()

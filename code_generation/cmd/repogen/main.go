@@ -115,9 +115,9 @@ func getColumnName(field *ast.Field) string {
 	}
 	tag := reflect.StructTag(strings.Trim(field.Tag.Value, "`"))
 	gormTag := tag.Get("gorm")
-	for _, part := range strings.Split(gormTag, ";") {
-		if strings.HasPrefix(part, "column:") {
-			return strings.TrimPrefix(part, "column:")
+	for part := range strings.SplitSeq(gormTag, ";") {
+		if after, ok := strings.CutPrefix(part, "column:"); ok {
+			return after
 		}
 	}
 	return toSnakeCase(field.Names[0].Name)

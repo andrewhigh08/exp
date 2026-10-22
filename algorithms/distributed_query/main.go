@@ -58,7 +58,7 @@ func DistributedQuery(query string, replicas []DatabaseHost) (string, error) {
 		go func(rep DatabaseHost) {
 			defer wg.Done()
 
-			for i := 0; i < maxAttempts; i++ {
+			for range maxAttempts {
 				// Перед каждой попыткой проверяем, не был ли отменен контекст (например, по таймауту).
 				if ctx.Err() != nil {
 					return // Выходим, если операция уже отменена.

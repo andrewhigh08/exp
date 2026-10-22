@@ -1,9 +1,9 @@
 // go test -bench . -benchmem
 //
 // Сравниваем способы сборки строки из чисел:
-//  - += с fmt.Sprintf
-//  - += с strconv.Itoa
-//  - strings.Builder + strconv.Itoa
+//   - += с fmt.Sprintf
+//   - += с strconv.Itoa
+//   - strings.Builder + strconv.Itoa
 //
 // Важно: первые два бенчмарка включают стоимость конкатенации через +=
 // (квадратичные аллокации), а не только конвертацию int→string.
@@ -18,39 +18,37 @@ import (
 
 const nNums = 100
 
+// sinkString — запись результата в глобальную переменную не даёт компилятору
+// выбросить сборку строки как неиспользуемую.
+var sinkString string
+
 func BenchmarkSprintfPlus(b *testing.B) {
-	var sink string
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		st := ""
-		for j := 0; j < nNums; j++ {
+		for j := range nNums {
 			st += fmt.Sprintf("%d", j)
 		}
-		sink = st
+		sinkString = st
 	}
-	_ = sink
 }
 
 func BenchmarkItoaPlus(b *testing.B) {
-	var sink string
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		st := ""
-		for j := 0; j < nNums; j++ {
+		for j := range nNums {
 			st += strconv.Itoa(j)
 		}
-		sink = st
+		sinkString = st
 	}
-	_ = sink
 }
 
 func BenchmarkBuilderItoa(b *testing.B) {
-	var sink string
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		var builder strings.Builder
 		builder.Grow(nNums * 2) // грубая оценка; убирает лишние реаллокации
-		for j := 0; j < nNums; j++ {
+		for j := range nNums {
 			builder.WriteString(strconv.Itoa(j))
 		}
-		sink = builder.String()
+		sinkString = builder.String()
 	}
-	_ = sink
 }

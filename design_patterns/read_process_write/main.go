@@ -71,10 +71,7 @@ func (dm *DataManager) Manage() {
 	// Поэтому здесь WaitGroup, а не errgroup (errgroup нужен, когда первая ошибка
 	// должна отменить остальных и всплыть наверх).
 	for _, item := range initialData {
-		item := item // Создаем локальную копию для безопасного использования в замыкании.
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
+		wg.Go(func() {
 			// `currentData` представляет собой набор данных на входе для цепочки процессоров.
 			// Начинаем с одного элемента.
 			currentData := []*Data{item}
@@ -109,7 +106,7 @@ func (dm *DataManager) Manage() {
 				finalResults = append(finalResults, currentData...)
 				finalMu.Unlock()
 			}
-		}()
+		})
 	}
 
 	wg.Wait()

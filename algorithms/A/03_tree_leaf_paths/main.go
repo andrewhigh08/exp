@@ -1,6 +1,9 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+	"strings"
+)
 
 // Node — узел рубрикатора: заголовок и потомки.
 type Node struct {
@@ -14,14 +17,14 @@ type Tree = []Node
 // formatPath вручную склеивает накопленные сегменты пути через " => "
 // (strings.Join запрещён — собираем строку сами).
 func formatPath(path []string) string {
-	res := ""
+	var res strings.Builder
 	for i, v := range path {
 		if i > 0 {
-			res += " => "
+			res.WriteString(" => ")
 		}
-		res += v
+		res.WriteString(v)
 	}
-	return res
+	return res.String()
 }
 
 // dfs — обход в пре-порядке (DFS). Накапливаем путь от корня в срезе path.

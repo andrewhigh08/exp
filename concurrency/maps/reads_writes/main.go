@@ -34,7 +34,7 @@ func main() {
 	// --- Фаза 1: Первичное заполнение карты ---
 	wg.Add(initialDataSize)
 	fmt.Printf("Запуск %d горутин для первоначального заполнения карты...\n", initialDataSize)
-	for i := 0; i < initialDataSize; i++ {
+	for i := range initialDataSize {
 		go func(key int) {
 			defer wg.Done()
 			mu.Lock() // Эксклюзивная блокировка для записи
@@ -51,11 +51,11 @@ func main() {
 	wg.Add(numReaders + numWriters)
 
 	// Горутины-читатели
-	for i := 0; i < numReaders; i++ {
+	for i := range numReaders {
 		go func(workerID int) {
 			defer wg.Done()
 			// Имитация многократных чтений
-			for j := 0; j < 5; j++ {
+			for range 5 {
 				mu.RLock() // Блокировка на чтение (разделяемая)
 				// Несколько горутин могут одновременно находиться здесь.
 				randomKey := rand.Intn(initialDataSize)
@@ -68,7 +68,7 @@ func main() {
 	}
 
 	// Горутины-писатели
-	for i := 0; i < numWriters; i++ {
+	for i := range numWriters {
 		go func(workerID int) {
 			defer wg.Done()
 			// Имитация редких записей

@@ -22,7 +22,7 @@ import (
 // Она принимает ID, контекст errgroup и флаг, указывающий, должна ли она вернуть ошибку.
 func worker(workerID int, egCtx context.Context, shouldFail bool) error {
 	fmt.Printf("Воркер %d: запущен.\n", workerID)
-	for j := 0; j < 10; j++ {
+	for j := range 10 {
 		// Критически важная проверка: перед выполнением очередной порции работы
 		// необходимо проверять, не был ли отменен контекст.
 		// Это позволяет горутине завершиться досрочно, если другая горутина уже вернула ошибку.
@@ -68,7 +68,7 @@ func runScenario(fail bool) {
 	eg, egCtx := errgroup.WithContext(context.Background())
 	numWorkers := 3
 
-	for i := 0; i < numWorkers; i++ {
+	for i := range numWorkers {
 		// Правильный способ передачи переменной цикла в горутину.
 		// Создаем копию `i`, чтобы каждая горутина получила свое уникальное значение.
 		workerID := i

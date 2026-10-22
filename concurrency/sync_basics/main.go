@@ -17,7 +17,7 @@ func main() {
 	const numGoroutines = 20
 	fmt.Printf("Запуск %d горутин...\n", numGoroutines)
 
-	for i := 0; i < numGoroutines; i++ {
+	for i := range numGoroutines {
 		// 2. Увеличиваем счетчик WaitGroup на 1 перед запуском каждой горутины.
 		// Это говорит `wg`, что нужно дождаться еще одной задачи.
 		wg.Add(1)

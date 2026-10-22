@@ -22,7 +22,7 @@ func TestProcessor_Success(t *testing.T) {
 	p := NewProcessor(2, 5)
 
 	var wg sync.WaitGroup
-	for i := 0; i < 5; i++ {
+	for range 5 {
 		wg.Add(1)
 		task := &mockTask{
 			doFunc: func() {
@@ -104,10 +104,8 @@ func TestProcessor_Race(t *testing.T) {
 	var wg sync.WaitGroup
 
 	// Run multiple goroutines submitting tasks and closing the processor concurrently
-	for i := 0; i < 10; i++ {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
+	for range 10 {
+		wg.Go(func() {
 			for {
 				task := &mockTask{}
 				err := p.Do(task)
@@ -116,7 +114,7 @@ func TestProcessor_Race(t *testing.T) {
 				}
 				time.Sleep(time.Microsecond)
 			}
-		}()
+		})
 	}
 
 	time.Sleep(50 * time.Millisecond)

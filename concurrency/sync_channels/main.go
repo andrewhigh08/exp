@@ -26,7 +26,7 @@ func spawnMessages(n int) <-chan string {
 		// которая в него пишет (производитель).
 		defer close(ch)
 
-		for i := 0; i < n; i++ {
+		for i := range n {
 			ch <- fmt.Sprintf("сообщение %d", i+1)
 		}
 		// После завершения цикла `defer close(ch)` будет вызван.
