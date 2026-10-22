@@ -41,6 +41,7 @@ exp/
 | Директория | Описание | Примитивы |
 |---|---|---|
 | `sync_basics` | Основы синхронизации | `sync.WaitGroup` |
+| `semaphore` | Ограничение конкурентности | Буферизированный канал как семафор |
 | `errgroup/` | Группы горутин с ошибками | `errgroup.Group` |
 | `errgroup_with_channels` | Errgroup + каналы | `errgroup`, `SetLimit`, каналы |
 | `producer_consumer` | Производитель-потребитель | Context, каналы, горутины |
@@ -86,7 +87,7 @@ exp/
 | Пример | Описание |
 |---|---|
 | `json_config` | HTTP-сервер с динамической перезагрузкой конфигурации |
-| `url_shorter` | Numeronym / аббревиатура строк (`fmt.Stringer`), не URL-shortener |
+| `numeronym` | Нумеронимы (`kubernetes` → `k8s`) через `fmt.Stringer` |
 | `cli_spinner` | Анимация спиннера в терминале |
 | `string_validator` | Валидация строк через регулярные выражения |
 
