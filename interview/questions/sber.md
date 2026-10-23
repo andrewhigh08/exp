@@ -109,7 +109,7 @@ func main() {
 
 	time.Sleep(time.Second * 10)
 
-	fmt.Printf("print map = %+v", m)["f1" :99999]
+	fmt.Printf("print map = %+v", m) // гонка: почти всегда fatal error: concurrent map writes; если горутины не пересеклись (например, GOMAXPROCS=1) — map[f1:100000 f2:100000]
 }
 
 func f1() {
@@ -141,12 +141,13 @@ func merge(sl1 []int, sl2 []int) []int {
 	lSum := l1 + l2
 	res := make([]int, 0, lSum)
 
-	for j, k := 0, 0; j < l1 && k < l2;{
-		if sl1[j] > ls2[k]{
-			res = append(res, ls2[k])
+	j, k := 0, 0 // объявлены до цикла: j и k нужны и после него
+	for j < l1 && k < l2 {
+		if sl1[j] > sl2[k]{
+			res = append(res, sl2[k])
 			k++
 		} else {
-			res = append(res, ls1[j])
+			res = append(res, sl1[j])
 			j++
 		}
 	}

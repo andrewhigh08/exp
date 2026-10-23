@@ -7,7 +7,7 @@ func main() {
 	a := make([]int, 0, 10) // len=0 cap=10
 	a = append(a, 10)       // [10] len=1 cap=10
 	a = append(a, 20)       // [10, 20] len=2 cap=10
-	b := a[:]               // [10, 20] len=2, cap=2
+	b := a[:]               // [10, 20] len=2, cap=10
 	// c := a[1:]           // [20] len=1, cap=9
 	b = append(b, 30)       // [10,20,40]
 	a = append(a, 40)       // [10,20,40]
@@ -51,7 +51,7 @@ func do(process func(string), strs []string) {
 	var wg sync.WaitGroup
 	for _, str := range strs {
 		wg.Add(1)
-		go func(s string) {
+		go func(s string) { // с Go 1.22 можно так не делать: str своя на каждой итерации (до 1.22 была одна на весь цикл); в do_ остаётся ошибка — горутин никто не ждёт
 			defer wg.Done()
 			process(s)
 		}(str)

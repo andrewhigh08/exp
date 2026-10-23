@@ -28,7 +28,7 @@ func main() {
 	fmt.Println(intRef) // 0x12345678901
 
 	*intRef = 10
-	fmt.Println(*intRef) // 0
+	fmt.Println(*intRef) // 10
 
 	ref := intRef
 	fmt.Println(ref) // 0x12345678901
@@ -70,11 +70,11 @@ func main() {
 	fmt.Println(refInSlice) // []
 
 	for i := 0; i < 5; i++ {
-		refInSlice = append(refInSlice, &i) // кладем в мапу 5 адресов i (0x01234567890)
+		refInSlice = append(refInSlice, &i) // кладем в слайс 5 адресов i: с Go 1.22 у каждой итерации своя i, адреса разные
 	}
 
 	for _, ref := range refInSlice {
-		fmt.Println(*ref) // разименовываем *ref, т.е. получаем значения из адресов 0 1 2 3 4
+		fmt.Println(*ref) // разименовываем *ref, т.е. получаем значения из адресов 0 1 2 3 4 (до Go 1.22 i была одна на весь цикл: 5 одинаковых адресов, вывод 5 5 5 5 5)
 	}
 
 }
@@ -168,8 +168,8 @@ func main() {
 	var declare map[string]int // ниловая мапа
 	fmt.Println(declare)       // map[]
 
-	initialize := make(map[string]int) // инициализация значениями по умолчанию [""] 0
-	fmt.Println(initialize)            // map[''] 0
+	initialize := make(map[string]int) // пустая, но не nil мапа: элементов нет (чтение любого ключа вернёт 0), писать в неё можно
+	fmt.Println(initialize)            // map[]
 
 	// Что выведет принт?
 
@@ -469,7 +469,7 @@ func main() {
 		data: make(map[int]int),
 	}
 
-	defer fmt.Println(cch.get(10)) // какое выведется число?  выведется 0, тк мы меняем копию
+	defer fmt.Println(cch.get(10)) // какое выведется число?  выведется 0: аргументы defer вычисляются сразу, и cch.get(10) вызывается, пока мапа ещё пуста. Копия тут ни при чём: копия cache делит с cch ту же мапу, и store/update её меняют (в defer func() { fmt.Println(cch.get(10)) }() вывелось бы 22)
 
 	defer cch.store(10, 11).update(10, 22)
 }
@@ -683,7 +683,7 @@ func main() {
 	wg.Add(10)
 
 	for i := 0; i < 10; i++ {
-		go func(j int) { // с версии 1.21 можно так не делать еще есть вариант с i := i
+		go func(j int) { // с версии 1.22 можно так не делать еще есть вариант с i := i
 			defer wg.Done()
 			ch <- j
 		}(i)
@@ -706,7 +706,7 @@ func main_() {
 	wg.Add(10)
 
 	for i := 0; i < 10; i++ {
-		go func(j int) { // с версии 1.21 можно так не делать еще есть вариант с i := i
+		go func(j int) { // с версии 1.22 можно так не делать еще есть вариант с i := i
 			defer wg.Done()
 			ch <- j
 		}(i)
@@ -837,7 +837,7 @@ get_x_y:
 	x = 11
 	y = 11
 
-	defer fmt.Println(func() int {
+	defer fmt.Println(func() int { // аргумент defer вычисляется сразу: x и y станут 111 ещё до return x + y (итог 222), а сам Println выполнится при выходе и выведет 0 строкой перед 222
 		x = 111
 		y = 111
 		return 0
