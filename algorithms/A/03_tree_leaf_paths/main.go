@@ -14,8 +14,9 @@ type Node struct {
 // Tree — список узлов (срез Node).
 type Tree = []Node
 
-// formatPath вручную склеивает накопленные сегменты пути через " => "
-// (strings.Join запрещён — собираем строку сами).
+// formatPath вручную, без strings.Join, склеивает накопленные сегменты пути
+// через " => " в strings.Builder: в отличие от += он не копирует всю
+// накопленную строку на каждом шаге.
 func formatPath(path []string) string {
 	var res strings.Builder
 	for i, v := range path {

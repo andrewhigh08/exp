@@ -41,8 +41,9 @@ func main() {
 
 	fmt.Println("--- Демонстрация fmt.Stringer с кастомным типом ---")
 	for _, str := range testCases {
-		// При вызове fmt.Println(str), Go автоматически обнаруживает,
-		// что тип `Abbreviator` имеет метод `String() string`, и вызывает его.
+		// Для %s и %v (как и в fmt.Println(str)) пакет fmt проверяет, реализует ли значение
+		// `fmt.Stringer`, и если да — вызывает его метод `String()`. Поэтому исходную строку
+		// передаем как string(str): у типа string метода String() нет.
 		fmt.Printf("Исходная строка: '%s', результат: %s\n", string(str), str)
 	}
 }

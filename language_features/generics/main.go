@@ -30,7 +30,8 @@ type Numbers[T Number] []T
 
 // sum — простая обобщенная функция.
 // [V int64 | float64] — это "параметры типа" (type parameters).
-// `V` может быть либо `int64`, либо `float64`.
+// `V` может быть либо `int64`, либо `float64` — ровно эти типы: без `~` пользовательский
+// CustomInt (базовый тип — int64) сюда не подойдет, см. демо 5.
 func sum[V int64 | float64](numbers []V) V {
 	var sum V // `sum` будет иметь тот же тип, что и элементы среза.
 	for _, num := range numbers {
@@ -43,6 +44,10 @@ func sum[V int64 | float64](numbers []V) V {
 // `comparable` — это встроенное ограничение, которому удовлетворяют все типы,
 // для которых разрешена операция сравнения `==` и `!=` (числа, строки, указатели, структуры и т.д.,
 // но не срезы, карты или функции).
+// С Go 1.20 ему удовлетворяют и интерфейсы, в том числе `any` (раньше — нет). Но для них `==`
+// безопасен не всегда: если динамические типы совпадают и несравнимы, будет паника во время
+// выполнения — contains([]any{[]int{1}}, any([]int{1})) компилируется, но падает с
+// "runtime error: comparing uncomparable type []int".
 func contains[T comparable](elements []T, searchEl T) bool {
 	for _, el := range elements {
 		if searchEl == el {
@@ -53,7 +58,8 @@ func contains[T comparable](elements []T, searchEl T) bool {
 }
 
 // sumUnionInterface — это версия `sum`, использующая кастомный интерфейс `Number` в качестве ограничения.
-// Это более гибкий подход, чем перечисление типов напрямую.
+// Именованное ограничение удобно переиспользовать, а благодаря `~` в `Number` эта версия гибче `sum`:
+// она принимает и пользовательские типы на основе int64/float64 (см. демо 5).
 func sumUnionInterface[V Number](numbers []V) V {
 	var sum V
 	for _, num := range numbers {
@@ -129,6 +135,9 @@ func demoTypeApproximation() {
 	// может работать с `[]CustomInt` напрямую, без преобразования типов.
 	// Это мощный механизм для работы с пользовательскими типами.
 	fmt.Println("Сумма `[]CustomInt` напрямую:", sumUnionInterface(customInts))
+
+	// А `sum` с ограничением `int64 | float64` (без `~`) такой срез не примет:
+	// sum(customInts) // ошибка компиляции: CustomInt does not satisfy int64 | float64 (possibly missing ~ for int64 in int64 | float64)
 }
 
 func main() {

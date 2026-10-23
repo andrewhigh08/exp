@@ -41,8 +41,7 @@ func sumPyramidRowNaive(n int) int {
 
 	// Первое нечетное число в n-ом ряду — это (countBefore+1)-е нечетное число в общем ряду.
 	// k-е нечетное число можно найти по формуле 2*k - 1.
-	// Нам нужно (countBefore)-е нечетное число, чтобы найти следующее за ним.
-	// Start-й нечетный номер = 2*(countBefore) + 1
+	// Подставляем k = countBefore+1: 2*(countBefore+1) - 1 = 2*countBefore + 1.
 	startNumber := countBefore*2 + 1
 
 	// Шаг 2: Суммируем n нечетных чисел, начиная со startNumber.
@@ -60,7 +59,7 @@ func sumPyramidRowNaive(n int) int {
 func main() {
 	fmt.Println("Сравнение двух методов для расчета суммы ряда в пирамиде нечетных чисел:")
 	fmt.Println("----------------------------------------------------------------------")
-	fmt.Printf("%-5s | %-20s | %-20s | %-10s\n", "Ряд (n)", "Сумма (по формуле)", "Сумма (наивная)", "Результат")
+	fmt.Printf("%-7s | %-20s | %-20s | %-10s\n", "Ряд (n)", "Сумма (по формуле)", "Сумма (наивная)", "Результат")
 	fmt.Println("----------------------------------------------------------------------")
 
 	// Проверяем для рядов с 1 по 10.
@@ -72,6 +71,6 @@ func main() {
 		if resultFormula != resultNaive {
 			status = "❌"
 		}
-		fmt.Printf("%-5d | %-20d | %-20d | %-10s\n", n, resultFormula, resultNaive, status)
+		fmt.Printf("%-7d | %-20d | %-20d | %-10s\n", n, resultFormula, resultNaive, status)
 	}
 }

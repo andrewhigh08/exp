@@ -68,7 +68,8 @@ func lowerBound(a []int, target int) int {
 // Сортирует goods на месте и для каждой потребности бинпоиском находит позицию
 // вставки, сравнивая левого и правого соседа. Версия на пакете sort лежит в ./stdlib.
 //
-// Время: O((N+M)·log N) — сортировка goods за O(N log N) плюс M бинарных
+// Время: в среднем O((N+M)·log N) — сортировка goods за O(N log N) (худший
+// случай quicksort — O(N²), медиана из трёх его не исключает) плюс M бинарных
 // поисков по O(log N); N=len(goods), M=len(buyerNeeds).
 // Память: O(log N) — стек рекурсии quicksort; сортировка in-place, прочее O(1).
 func totalDissatisfaction(goods []int, buyerNeeds []int) int {

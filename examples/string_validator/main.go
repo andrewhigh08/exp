@@ -81,27 +81,39 @@ func (sv *StringValidator) Validate(str string) bool {
 	return true
 }
 
-// createDummyPatternsFile создает временный файл с паттернами для демонстрации.
-func createDummyPatternsFile(filename string) error {
+// createDummyPatternsFile создает временный файл с паттернами для демонстрации
+// и возвращает его имя. os.CreateTemp выбирает уникальное имя во временном каталоге ОС,
+// поэтому пример не мусорит в текущей директории и не перезапишет чужой файл.
+func createDummyPatternsFile() (string, error) {
+	f, err := os.CreateTemp("", "patterns-*.cfg")
+	if err != nil {
+		return "", err
+	}
+	defer f.Close()
+
 	content := `^user_` + "\n" + `\d{3}` + "\n" + `.*_test$`
-	return os.WriteFile(filename, []byte(content), 0644)
+	_, err = f.WriteString(content)
+	return f.Name(), err
 }
 
 func main() {
-	patternFile := "patterns.cfg"
 	// 1. Создаем файл с паттернами для нашего примера.
-	if err := createDummyPatternsFile(patternFile); err != nil {
+	patternFile, err := createDummyPatternsFile()
+	if err != nil {
 		log.Fatalf("Не удалось создать файл с паттернами: %v", err)
 	}
 	// Удаляем временный файл в конце.
 	defer os.Remove(patternFile)
 
 	fmt.Printf("Загрузка паттернов из файла '%s'...\n", patternFile)
-	fmt.Println("Паттерны:\n1. Должно начинаться с 'user_'\n2. Должно содержать 3 цифры\n3. Должно заканчиваться на '_test'")
+	fmt.Println("Паттерны:\n1. Должно начинаться с 'user_'\n2. Должно содержать 3 цифры подряд\n3. Должно заканчиваться на '_test'")
 
 	// 2. Создаем валидатор.
 	validator, err := NewStringValidator(patternFile)
 	if err != nil {
+		// log.Fatalf завершает программу через os.Exit, который не выполняет
+		// отложенные вызовы, поэтому временный файл удаляем явно.
+		os.Remove(patternFile)
 		log.Fatalf("Ошибка при создании валидатора: %v", err)
 	}
 
@@ -115,6 +127,6 @@ func main() {
 	fmt.Println("\n--- Результаты валидации ---")
 	for _, tc := range testCases {
 		isValid := validator.Validate(tc)
-		fmt.Printf("Строка '%-15s' -> Валидна: %t\n", tc, isValid)
+		fmt.Printf("Строка %-16q -> Валидна: %t\n", tc, isValid)
 	}
 }

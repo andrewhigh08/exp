@@ -47,7 +47,7 @@ type LogManager interface {
 // LogAggregator — реализация LogManager.
 type LogAggregator struct {
 	reader       LogReader
-	transformers []LogTransformer // Теперь это срез для поддержки цепочки трансформаций
+	transformers []LogTransformer // Срез — для поддержки цепочки трансформаций
 	storage      LogStorage
 	numWorkers   int // Количество воркеров для параллельной обработки
 }

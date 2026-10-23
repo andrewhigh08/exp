@@ -58,7 +58,7 @@ func DistributedQuery(query string, replicas []DatabaseHost) (string, error) {
 		go func(rep DatabaseHost) {
 			defer wg.Done()
 
-			for range maxAttempts {
+			for attempt := range maxAttempts {
 				// Перед каждой попыткой проверяем, не был ли отменен контекст (например, по таймауту).
 				if ctx.Err() != nil {
 					return // Выходим, если операция уже отменена.
@@ -69,6 +69,11 @@ func DistributedQuery(query string, replicas []DatabaseHost) (string, error) {
 				// Успешный результат или ошибка ErrNotFound - отправляем в канал и выходим.
 				if err == nil || errors.Is(err, ErrNotFound) {
 					resCh <- Response{Message: resp, Err: err, Host: rep.Name()}
+					return
+				}
+
+				// Попытки исчерпаны — ждать retryInterval перед выходом незачем.
+				if attempt == maxAttempts-1 {
 					return
 				}
 
@@ -201,6 +206,8 @@ func main() {
 	result, err = DistributedQuery("SELECT * FROM users", replicas2)
 	if err != nil {
 		fmt.Printf("Error: %v\n", err)
+	} else {
+		fmt.Printf("Final Result: %s\n", result)
 	}
 	// Ожидаемый результат: "all replicas failed after multiple retries"
 
@@ -215,6 +222,8 @@ func main() {
 	result, err = DistributedQuery("SELECT * FROM users", replicas3)
 	if err != nil {
 		fmt.Printf("Error: %v\n", err)
+	} else {
+		fmt.Printf("Final Result: %s\n", result)
 	}
 	// Ожидаемый результат: "query timed out after 2s"
 

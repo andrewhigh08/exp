@@ -3,9 +3,10 @@
 package main
 
 import (
+	"cmp"
 	"errors"
 	"fmt"
-	"sort"
+	"slices"
 )
 
 // notes содержит доступные номиналы банкнот.
@@ -40,8 +41,8 @@ func getMoney(value int) (result map[int]int, err error) {
 		return nil, errInvalidAmount
 	}
 
-	// Для наглядности, убедимся, что наши банкноты всегда отсортированы.
-	sort.Sort(sort.Reverse(sort.IntSlice(notes)))
+	// Для наглядности, убедимся, что наши банкноты всегда отсортированы (по убыванию).
+	slices.SortFunc(notes, func(a, b int) int { return cmp.Compare(b, a) })
 
 	result = make(map[int]int)
 	remaining := value

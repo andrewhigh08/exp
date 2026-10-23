@@ -43,7 +43,8 @@ func reconstructRoute(tickets []Ticket) []Ticket {
 		}
 	}
 	if !found {
-		// Нет однозначного старта (цикл/некорректный вход) — отдаём копию входа.
+		// Старта нет: каждый From встречается и среди To (цикл/некорректный вход) —
+		// отдаём копию входа.
 		res := make([]Ticket, n)
 		copy(res, tickets)
 		return res

@@ -11,9 +11,11 @@ import (
 //   - sort.SearchInts — позиция вставки: первый индекс, где goods[i] >= need,
 //     то есть в точности lowerBound из ручной версии.
 //
-// Время: O((N+M)·log N) — сортировка goods за O(N log N) плюс M бинарных
-// поисков по O(log N); N=len(goods), M=len(buyerNeeds).
-// Память: O(1) дополнительной — sort.Ints сортирует на месте.
+// Время: O((N+M)·log N) — сортировка goods за O(N log N) даже в худшем случае
+// (с Go 1.22 sort.Ints просто вызывает slices.Sort — pdqsort с откатом на
+// heapsort) плюс M бинарных поисков по O(log N); N=len(goods), M=len(buyerNeeds).
+// Память: O(log N) — стек рекурсии pdqsort (сортирует на месте, без буферов),
+// прочее O(1).
 func totalDissatisfaction(goods []int, buyerNeeds []int) int {
 	if len(goods) == 0 {
 		// Товаров нет — покупать нечего; неудовлетворённость не определена, возвращаем 0.

@@ -51,11 +51,13 @@ func TestProcessor_QueueFull(t *testing.T) {
 	// The third task should fail with ErrQueueFull.
 	p := NewProcessor(1, 1)
 
+	started := make(chan struct{})
 	blocked := make(chan struct{})
 	doneBlocked := make(chan struct{})
 
 	task1 := &mockTask{
 		doFunc: func() {
+			close(started)
 			<-blocked
 			close(doneBlocked)
 		},
@@ -66,8 +68,9 @@ func TestProcessor_QueueFull(t *testing.T) {
 		t.Fatalf("first task Do failed: %v", err)
 	}
 
-	// Wait a moment for worker to take task1.
-	time.Sleep(10 * time.Millisecond)
+	// Wait until the worker has taken task1 out of the queue. A signal instead of
+	// time.Sleep: a sleep only guesses how long the worker needs to get there.
+	<-started
 
 	task2 := &mockTask{}
 	// This task goes into the queue.
@@ -92,6 +95,7 @@ func TestProcessor_Close(t *testing.T) {
 
 	task := &mockTask{}
 	p.Close()
+	p.Close() // A second Close must not panic (close is guarded by sync.Once).
 
 	// Should return ErrClosed after close
 	if err := p.Do(task); err != ErrClosed {

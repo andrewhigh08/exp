@@ -55,7 +55,10 @@ func (p *PubSubManager) Publish(topicID string, msg any) {
 }
 
 // Subscribe подписывает нового клиента на топик и возвращает канал для получения сообщений.
-func (p *PubSubManager) Subscribe(topicID string) chan any {
+// Канал отдается как `<-chan any` (только для чтения): им владеет менеджер, и закрывает
+// его только он (в Unsubscribe/Close). Подписчик не может ни писать в канал, ни закрыть
+// его (закрой он канал сам — следующий Publish упал бы с паникой "send on closed channel").
+func (p *PubSubManager) Subscribe(topicID string) <-chan any {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
@@ -69,9 +72,10 @@ func (p *PubSubManager) Subscribe(topicID string) chan any {
 	return ch
 }
 
-// Unsubscribe отписывает клиента от топика.
-// subChan должен быть типа `chan any`, чтобы его можно было закрыть.
-func (p *PubSubManager) Unsubscribe(topicID string, subChan chan any) {
+// Unsubscribe отписывает клиента от топика и закрывает его канал.
+// Закрыть канал только для чтения (`<-chan any`) нельзя — это ошибка компиляции,
+// поэтому закрываем найденный в `topics` двунаправленный канал того же подписчика.
+func (p *PubSubManager) Unsubscribe(topicID string, subChan <-chan any) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
@@ -80,12 +84,12 @@ func (p *PubSubManager) Unsubscribe(topicID string, subChan chan any) {
 		// Ёмкость берём len(subscribers): при len == 0 значение -1 вызвало бы
 		// панику "makeslice: cap out of range".
 		newSubscribers := make([]chan any, 0, len(subscribers))
-		removed := false
+		var removed chan any // найденный канал подписчика (двунаправленный)
 		for _, sub := range subscribers {
 			if sub != subChan {
 				newSubscribers = append(newSubscribers, sub)
 			} else {
-				removed = true
+				removed = sub
 			}
 		}
 		if len(newSubscribers) == 0 {
@@ -96,8 +100,8 @@ func (p *PubSubManager) Unsubscribe(topicID string, subChan chan any) {
 		}
 		// Закрываем канал только если он действительно был подписчиком этого топика —
 		// иначе можно закрыть чужой канал или получить повторное закрытие (double-close).
-		if removed {
-			close(subChan)
+		if removed != nil {
+			close(removed)
 		}
 	}
 }
@@ -118,26 +122,32 @@ func (p *PubSubManager) Close() {
 
 func main() {
 	m := NewPubSubManager()
+	// wg ждет горутины подписчиков: программа не ждет другие горутины при выходе
+	// из main, и без wg.Wait() подписчик 2, скорее всего, не успел бы напечатать «канал закрыт».
+	// defer выполняются в обратном порядке (LIFO): сначала m.Close() закроет каналы
+	// подписчиков, затем wg.Wait() дождется, пока их горутины выйдут из range.
+	var wg sync.WaitGroup
+	defer wg.Wait()
 	defer m.Close() // Гарантируем корректное завершение работы.
 
 	// Подписчик 1
 	sub1Chan := m.Subscribe("news")
-	go func() {
+	wg.Go(func() {
 		for msg := range sub1Chan {
 			log.Printf("Подписчик 1 получил: %v", msg)
 		}
 		log.Println("Подписчик 1: канал закрыт.")
-	}()
+	})
 
 	// Подписчик 2
 	sub2Chan := m.Subscribe("news")
-	go func() {
+	wg.Go(func() {
 		for msg := range sub2Chan {
 			log.Printf("Подписчик 2 получил: %v", msg)
 			time.Sleep(500 * time.Millisecond) // Имитация медленного потребителя
 		}
 		log.Println("Подписчик 2: канал закрыт.")
-	}()
+	})
 
 	// Публикуем сообщения
 	m.Publish("news", "Привет, мир!")
