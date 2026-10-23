@@ -15,7 +15,13 @@ it to locate a topic rather than re-scanning the tree.
 
 - **Almost every leaf directory is its own `package main` with a single `main.go`.** These
   are not part of a shared library; they are independent programs meant to be run one at a
-  time. There is no application entry point or service to "start".
+  time. There is no application entry point or service to "start". Exceptions:
+  `concurrency/processor` (a library package with unit tests), `benchmarks/` (`package bench`,
+  test files only) and `code_generation/` (see below).
+
+- Some examples deliberately demonstrate broken behaviour (typed nil in an interface, data
+  races, pre-Go-1.22 loop-variable capture explained in comments). Don't "fix" a deliberate
+  demonstration — fix it only if it doesn't show what its text claims.
 
 - **There are two separate `go.mod` files:**
   - root: `github.com/andrewhigh08/exp` (Go 1.27.2, requires `golang.org/x/sync`)
@@ -26,7 +32,9 @@ it to locate a topic rather than re-scanning the tree.
   module**. The nested `code_generation/` module is excluded — you must `cd` into it to build,
   run, vet, or manage its dependencies. Do not add its imports to the root `go.mod`.
 
-- `aaa/` is a gitignored scratch directory; ignore it.
+- `aaa/` is a gitignored scratch directory; ignore it. It still lives inside the root module,
+  so `./...` patterns (and `gofmt -w .`) include it — when rewriting files with `go fix` or
+  `gofmt -w`, pass an explicit package/file list that excludes `aaa/`.
 
 ## Common commands
 
@@ -38,9 +46,15 @@ go run concurrency/producer_consumer/main.go
 go run design_patterns/decorator/main.go
 ```
 
-Benchmarks (`benchmarks/`, `package bench` — the only tests in the repo):
+`examples/json_config` is an HTTP server on `:8080` that runs until killed, and it looks for
+`config.json` in the current directory — from the repo root run
+`go run ./examples/json_config -config examples/json_config/config.json`. Every other program
+exits on its own within a few seconds.
+
+Tests: unit tests live in `concurrency/processor`; benchmarks (`for b.Loop()`) in `benchmarks/`:
 
 ```bash
+go test -race ./...
 cd benchmarks && go test -bench . -benchmem
 ```
 
@@ -50,6 +64,8 @@ Build / vet the root module (does NOT touch nested modules — see above):
 go build ./...
 go vet ./...
 gofmt -l .        # no linter config (golangci-lint/Makefile) exists; gofmt is the standard
+go fix -diff ./...  # Go 1.26+ modernizers; the one suggestion left unapplied on purpose is
+                    # slices.Contains in language_features/generics (it shows a hand-written generic func)
 ```
 
 ## Code generation (`code_generation/`, module `repogen`)
