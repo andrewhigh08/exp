@@ -5,7 +5,7 @@ when working with code in this repository.
 
 ## What this is
 
-A personal Go learning/experiment repository (`github.com/andrewhigh08/exp`, Go 1.27.2).
+A personal Go learning/experiment repository (`github.com/andrewhigh08/exp`, Go 1.27.3).
 It is a catalog of small, self-contained programs grouped by topic: algorithms,
 concurrency patterns, design patterns, language features, runnable examples, and benchmarks.
 
@@ -25,8 +25,8 @@ it to locate a topic rather than re-scanning the tree.
   demonstration — fix it only if it doesn't show what its text claims.
 
 - **There are two separate `go.mod` files:**
-  - root: `github.com/andrewhigh08/exp` (Go 1.27.2, requires `golang.org/x/sync`)
-  - `code_generation/`: module `repogen` (Go 1.27.2, requires `golang.org/x/tools` and
+  - root: `github.com/andrewhigh08/exp` (Go 1.27.3, requires `golang.org/x/sync`)
+  - `code_generation/`: module `repogen` (Go 1.27.3, requires `golang.org/x/tools` and
     `gorm.io/gorm`; declares `tool repogen/cmd/repogen`)
 
   Consequence: `go build ./...` / `go vet ./...` from the repo root **only covers the root
