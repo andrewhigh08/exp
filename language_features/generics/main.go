@@ -1,6 +1,7 @@
 // Package main демонстрирует основы дженериков (обобщенного программирования) в Go,
 // введенных в версии 1.18. Дженерики позволяют писать функции и типы, которые
-// могут работать с любым типом из заданного набора.
+// могут работать с любым типом из заданного набора. С Go 1.27 собственные
+// параметры типа могут объявлять и методы (generic-методы, см. демо 6).
 package main
 
 import (
@@ -25,6 +26,18 @@ func (ci CustomInt) IsPositive() bool {
 // Numbers — это обобщенный (generic) тип.
 // Он представляет собой срез элементов типа `T`, где `T` должен удовлетворять ограничению `Number`.
 type Numbers[T Number] []T
+
+// Map — generic-метод (Go 1.27+): кроме параметра типа `T`, пришедшего от получателя,
+// у него есть собственный параметр типа `U`. До Go 1.27 методы не могли объявлять
+// свои параметры типа, и такое преобразование приходилось писать свободной функцией:
+// func mapNumbers[T Number, U any](ns Numbers[T], f func(T) U) []U.
+func (ns Numbers[T]) Map[U any](f func(T) U) []U {
+	out := make([]U, 0, len(ns))
+	for _, n := range ns {
+		out = append(out, f(n))
+	}
+	return out
+}
 
 // --- Обобщенные (Generic) Функции ---
 
@@ -140,10 +153,29 @@ func demoTypeApproximation() {
 	// sum(customInts) // ошибка компиляции: CustomInt does not satisfy int64 | float64 (possibly missing ~ for int64 in int64 | float64)
 }
 
+func demoGenericMethods() {
+	fmt.Println("\n--- 6. Generic-методы (Go 1.27+) ---")
+	ints := Numbers[int64]{1, 2, 3}
+
+	// `U` выводится из аргумента-функции: здесь `U` = string.
+	labels := ints.Map(func(n int64) string { return fmt.Sprintf("#%d", n) })
+	fmt.Println("Numbers[int64] -> []string:", labels)
+
+	// Параметр типа метода можно указать и явно — так же, как у обобщенной функции.
+	halves := ints.Map[float64](func(n int64) float64 { return float64(n) / 2 })
+	fmt.Println("Numbers[int64] -> []float64:", halves)
+
+	// Ограничения: у методов интерфейса параметров типа быть не может, а generic-метод
+	// не реализует метод интерфейса. Например, Numbers[int64] не удовлетворяет
+	// interface{ Map(func(int64) string) []string } — ошибка компиляции
+	// "does not implement ... (wrong type for method Map)".
+}
+
 func main() {
 	demoSum()
 	demoContains()
 	demoAny()
 	demoUnionInterface()
 	demoTypeApproximation()
+	demoGenericMethods()
 }

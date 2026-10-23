@@ -70,7 +70,7 @@ exp/
 
 | Тема | Директория | Что демонстрирует |
 |---|---|---|
-| Generics | `generics/` | Параметры типов, constraints (Go 1.18+) |
+| Generics | `generics/` | Параметры типов, constraints (`~T`, `comparable`, `any`), generic-методы (Go 1.27+) |
 | Pointers | `pointers/` | Семантика указателей, pass-by-value |
 | Slices | `slices/` | Внутреннее устройство слайсов, append |
 | Defer | `defer/` | Момент вычисления аргументов отложенного вызова (ресивер-значение vs указатель vs замыкание) |
